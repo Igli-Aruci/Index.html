@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supporto POS</title>
+    <title>Avvio Supporto...</title>
     <style>
         body { font-family: sans-serif; text-align: center; margin-top: 20%; color: #666; }
     </style>
 </head>
 <body>
-    <p>Caricamento della chat di supporto in corso...</p>
+    <p>Avvio della chat di supporto in corso...</p>
 
     <script>
-        // 1. Recupera il Business ID dall'URL inviato da LightSpeed
+        // 1. Recupera i dati passati da LightSpeed tramite l'URL
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || 'Cliente-POS';
+        const locationName = urlParams.get('loc') || 'Sede';
 
-        // 2. Crea il link di 3CX compilando sia Nome che Email (per superare il blocco iniziale)
-        const targetUrl = `https://norival.my3cx.it/LiveChat403792?name=${encodeURIComponent(businessId)}&email=${encodeURIComponent(businessId)}@norival.com`;
+        // 2. Crea un'email valida partendo dal nome della sede (toglie gli spazi e mette tutto minuscolo)
+        const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
+        const emailValida = locationFormattata + '@norival.com';
 
-        // 3. Reindirizza istantaneamente il tablet alla chat
+        // 3. Genera il link finale verso 3CX con Nome ed Email pronti
+        const targetUrl = `https://norival.my3cx.it/LiveChat403792?name=${encodeURIComponent(businessId)}&email=${encodeURIComponent(emailValida)}`;
+
+        // 4. Reindirizza istantaneamente il tablet alla chat
         window.location.replace(targetUrl);
     </script>
 </body>
