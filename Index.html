@@ -24,7 +24,7 @@
         <p>Inserisci questi dati qui sotto per avviare la chat:</p>
         <div class="dati">
             <p>Nome: <span class="highlight" id="mostra-nome">...</span></p>
-            <p>Email: <span class="highlight" id="mostra-email">...</span></p>
+            <p>Sede/Email: <span class="highlight" id="mostra-email">...</span></p>
         </div>
     </div>
 
@@ -35,11 +35,9 @@
         const businessId = urlParams.get('id') || 'Cliente POS';
         const locationName = urlParams.get('loc') || 'Sede';
 
-        const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        const emailValida = locationFormattata;
-
+        // Mostra i dati puri passati da LightSpeed, senza aggiungere domini
         document.getElementById('mostra-nome').innerText = businessId;
-        document.getElementById('mostra-email').innerText = emailValida;
+        document.getElementById('mostra-email').innerText = locationName;
     </script>
 
 </body>
