@@ -29,39 +29,34 @@
         
         <div class="istruzioni">
             <strong>Istruzioni per l'accesso alla chat:</strong><br>
-            1. Tocca i dati qui sotto per copiarli in automatico.<br>
+            1. Tocca il dato qui sotto per copiarlo in automatico.<br>
             2. Apri la chat cliccando sul pulsante azzurro.<br>
-            3. Fai <strong>"Incolla"</strong> per compilare velocemente i campi Nome ed Email nella schermata successiva.
+            3. Fai <strong>"Incolla"</strong> sia nel campo Nome che nel campo Email nella schermata successiva.
         </div>
         
         <div class="dati-box">
-            <span class="campo-titolo">Da incollare nel campo NOME:</span>
-            <span class="highlight" id="mostra-nome" onclick="copiaTesto('mostra-nome')">...</span>
-            <span class="click-info">Tocca per copiare</span>
-            
-            <span class="campo-titolo">Da incollare nel campo EMAIL:</span>
-            <span class="highlight" id="mostra-email" onclick="copiaTesto('mostra-email')">...</span>
-            <span class="click-info">Tocca per copiare</span>
+            <span class="campo-titolo">DA INCOLLARE NEL CAMPO NOME ED EMAIL:</span>
+            <span class="highlight" id="mostra-dato" onclick="copiaTesto('mostra-dato')">...</span>
+            <span class="click-info">Seleziona per copiarlo</span>
         </div>
         
-        <button class="btn" onclick="apriChat()">💬 Apri Chat 3CX</button>
+        <button class="btn" onclick="apriChat()">💬 Chata con Supporto NO RIVAL</button>
     </div>
 
     <script>
-        // Recupera i dati passati da LightSpeed
+        // Recupera i dati passati da LightSpeed nell'URL
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
 
-        // Genera la mail unendo businessId e locationName.com
+        // Genera il dato unendo businessId e locationName.com
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        const emailCompleta = businessId + '@' + locationFormattata + '.com';
+        const datoCompleto = businessId + '@' + locationFormattata + '.com';
 
-        // Mostra i testi nei riquadri
-        document.getElementById('mostra-nome').innerText = businessId;
-        document.getElementById('mostra-email').innerText = emailCompleta;
+        // Mostra il testo nel riquadro
+        document.getElementById('mostra-dato').innerText = datoCompleto;
 
-        // Apre la chat nella stessa pagina
+        // Apre la chat nella stessa pagina per evitare blocchi del tablet
         function apriChat() {
             window.location.href = "https://norival.my3cx.it/LiveChat403792";
         }
@@ -69,12 +64,30 @@
         // Funzione per copiare il testo toccandolo e mostrare feedback visivo
         function copiaTesto(elementId) {
             const testo = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(testo);
             
+            // Metodo moderno per copiare negli appunti
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(testo);
+            } else {
+                // Metodo di riserva per browser più vecchi o contesti non sicuri
+                let textArea = document.createElement("textarea");
+                textArea.value = testo;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            
+            // Feedback visivo "Copiato!"
             const elemento = document.getElementById(elementId);
             const testoOriginale = elemento.innerText;
             elemento.innerText = "Copiato!";
-            setTimeout(() => { elemento.innerText = testoOriginale; }, 1000);
+            elemento.style.color = "#1abc9c";
+            setTimeout(() => { 
+                elemento.innerText = testoOriginale; 
+                elemento.style.color = "#e67e22";
+            }, 1000);
         }
     </script>
 
