@@ -5,23 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        /* Stili per rendere la pagina bella e pulita sul tablet */
         body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; display: flex; flex-direction: column; background-color: #f4f4f4; }
         
         .header { background: #2c3e50; color: white; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; }
         .header h3 { margin: 0 0 10px 0; font-size: 18px; color: #3498db; }
         .header p { margin: 5px 0; font-size: 16px; }
         
-        /* Evidenzia i dati così il cliente li legge bene */
         .dati { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
         .highlight { background: #1abc9c; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; user-select: all; }
         
-        /* Stile per l'iframe della chat */
         iframe { flex-grow: 1; border: none; width: 100%; background: white; }
-        
-        /* Link di emergenza se l'iframe rimane bianco */
-        .emergenza { margin-top: 10px; font-size: 12px; color: #bdc3c7; }
-        .emergenza a { color: #3498db; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -30,16 +23,24 @@
         <h3>Assistenza NO RIVAL</h3>
         <p>Inserisci questi dati qui sotto per avviare la chat:</p>
         <div class="dati">
-            <p>Nome: <span class="highlight" id="mostra-nome">Caricamento...</span></p>
+            <p>Nome: <span class="highlight" id="mostra-nome">...</span></p>
             <p>Email: <span class="highlight" id="mostra-email">...</span></p>
         </div>
-        <div class="emergenza">La chat non si carica? <a href="https://norival.my3cx.it/callus/#LiveChat403792" target="_blank">Clicca qui per aprirla</a></div>
     </div>
 
-    <iframe src="https://norival.my3cx.it/callus/#LiveChat403792" title="Chat 3CX"></iframe>
+    <iframe src="https://norival.my3cx.it/callus/#LiveChat403792" title="Chat 3CX" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
 
     <script>
-        // 1. Recupera ID e Sede passati da LightSpeed
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || 'Cliente POS';
-        const locationName
+        const locationName = urlParams.get('loc') || 'Sede';
+
+        const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
+        const emailValida = locationFormattata + '@norival.com';
+
+        document.getElementById('mostra-nome').innerText = businessId;
+        document.getElementById('mostra-email').innerText = emailValida;
+    </script>
+
+</body>
+</html>
