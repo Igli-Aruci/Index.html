@@ -8,18 +8,13 @@
         body { font-family: sans-serif; background-color: #ecf0f1; text-align: center; margin: 0; padding: 20px; }
         .container { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 40px auto; }
         h2 { color: #2c3e50; margin-top: 0; }
-        .istruzioni { color: #34495e; font-size: 16px; margin-bottom: 10px; line-height: 1.5; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #3498db; }
+        .istruzioni { color: #34495e; font-size: 16px; margin-bottom: 10px; line-height: 1.5; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #1abc9c; }
         
-        /* Riquadro dei dati */
         .dati-box { background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; }
         .campo-titolo { font-size: 14px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; display: block; margin-top: 10px; }
         .highlight { font-weight: bold; color: #e67e22; font-size: 22px; display: inline-block; margin-top: 5px; margin-bottom: 5px; background: white; padding: 4px 10px; border-radius: 4px; border: 1px solid #bdc3c7; cursor: pointer; user-select: all; }
         .highlight:active { background: #d5f5e3; }
         .click-info { font-size: 11px; color: #95a5a6; display: block; margin-bottom: 10px; font-style: italic; }
-        
-        /* Pulsante Chat */
-        .btn { color: white; border: none; padding: 20px; font-size: 22px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-sizing: border-box; display: block; transition: 0.2s; background: #3498db; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); }
-        .btn:active { transform: translateY(2px); background: #2980b9; }
     </style>
 </head>
 <body>
@@ -28,48 +23,39 @@
         <h2>Assistenza NO RIVAL</h2>
         
         <div class="istruzioni">
-            <strong>Istruzioni per l'accesso alla chat:</strong><br>
-            1. Tocca il dato qui sotto per copiarlo in automatico.<br>
-            2. Apri la chat cliccando sul pulsante azzurro.<br>
-            3. Fai <strong>"Incolla"</strong> nel campo <strong>Nome</strong> nella schermata successiva.
+            <strong>Istruzioni per la chat:</strong><br>
+            1. <strong>Tocca il dato</strong> qui sotto per copiarlo in automatico.<br>
+            2. Clicca sul <strong>fumetto della chat</strong> in basso a destra.<br>
+            3. Fai <strong>"Incolla"</strong> nel campo <strong>Nome</strong> per iniziare a parlare con noi.
         </div>
         
         <div class="dati-box">
             <span class="campo-titolo">DA INCOLLARE NEL CAMPO NOME:</span>
             <span class="highlight" id="mostra-dato" onclick="copiaTesto('mostra-dato')">...</span>
-            <span class="click-info">Seleziona per copiarlo</span>
+            <span class="click-info">Tocca qui per copiare</span>
         </div>
-        
-        <button class="btn" onclick="apriChat()">💬 Chata con Supporto NO RIVAL</button>
     </div>
 
+    <call-us-selector phonesystem-url="https://norival.my3cx.it" party="LiveChat403792"></call-us-selector>
+    <script defer src="https://norival.my3cx.it/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+
     <script>
-        // Recupera i dati passati da LightSpeed nell'URL
+        // Gestione variabili da LightSpeed
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
 
-        // Genera il dato unendo businessId e locationName con un trattino
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
         const datoCompleto = businessId + '-' + locationFormattata;
 
-        // Mostra il testo nel riquadro
         document.getElementById('mostra-dato').innerText = datoCompleto;
 
-        // Apre la chat nella stessa pagina per evitare blocchi del tablet
-        function apriChat() {
-            window.location.href = "https://norival.my3cx.it/LiveChat403792";
-        }
-
-        // Funzione per copiare il testo toccandolo e mostrare feedback visivo
+        // Funzione di copia testo intelligente
         function copiaTesto(elementId) {
             const testo = document.getElementById(elementId).innerText;
-            
-            // Metodo moderno per copiare negli appunti
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(testo);
             } else {
-                // Metodo di riserva per browser più vecchi o contesti non sicuri
                 let textArea = document.createElement("textarea");
                 textArea.value = testo;
                 document.body.appendChild(textArea);
@@ -79,7 +65,6 @@
                 document.body.removeChild(textArea);
             }
             
-            // Feedback visivo "Copiato!"
             const elemento = document.getElementById(elementId);
             const testoOriginale = elemento.innerText;
             elemento.innerText = "Copiato!";
