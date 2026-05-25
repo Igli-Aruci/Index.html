@@ -5,33 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; }
-        iframe { border: none; width: 100%; height: 100%; }
-        .loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; color: #666; }
+        body { font-family: sans-serif; text-align: center; margin-top: 20%; color: #666; }
     </style>
 </head>
 <body>
-
-    <div id="loader" class="loading">Caricamento supporto in corso...</div>
+    <p>Caricamento della chat di supporto in corso...</p>
 
     <script>
         // 1. Recupera il Business ID dall'URL inviato da LightSpeed
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || 'Cliente-POS';
 
-        // 2. Crea dinamicamente l'URL della chat di 3CX con i dati pronti per il modulo
-        // Usiamo i parametri standard che il widget della chat legge all'avvio
-        const chatUrl = `https://norival.my3cx.it/LiveChat403792?name=${encodeURIComponent(businessId)}&email=${encodeURIComponent(businessId)}@norival.com`;
+        // 2. Crea il link di 3CX compilando sia Nome che Email (per superare il blocco iniziale)
+        const targetUrl = `https://norival.my3cx.it/LiveChat403792?name=${encodeURIComponent(businessId)}&email=${encodeURIComponent(businessId)}@norival.com`;
 
-        // 3. Crea l'iFrame per mostrare la chat a schermo intero
-        const iframe = document.createElement('iframe');
-        iframe.src = chatUrl;
-        iframe.onload = function() {
-            document.getElementById('loader').style.display = 'none';
-        };
-
-        document.body.appendChild(iframe);
+        // 3. Reindirizza istantaneamente il tablet alla chat
+        window.location.replace(targetUrl);
     </script>
-
 </body>
 </html>
