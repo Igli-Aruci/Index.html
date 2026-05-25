@@ -36,7 +36,7 @@
         const locationName = urlParams.get('loc') || 'Sede';
 
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        const emailValida = locationFormattata + '@norival.com';
+        const emailValida = locationFormattata;
 
         document.getElementById('mostra-nome').innerText = businessId;
         document.getElementById('mostra-email').innerText = emailValida;
