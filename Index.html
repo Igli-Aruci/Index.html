@@ -33,25 +33,13 @@
             <p>Nome: <span class="highlight" id="mostra-nome">Caricamento...</span></p>
             <p>Email: <span class="highlight" id="mostra-email">...</span></p>
         </div>
-        <div class="emergenza">La chat non si carica? <a href="https://norival.my3cx.it/LiveChat403792" target="_blank">Clicca qui per aprirla</a></div>
+        <div class="emergenza">La chat non si carica? <a href="https://norival.my3cx.it/callus/#LiveChat403792" target="_blank">Clicca qui per aprirla</a></div>
     </div>
 
-    <iframe src="https://norival.my3cx.it/LiveChat403792" title="Chat 3CX"></iframe>
+    <iframe src="https://norival.my3cx.it/callus/#LiveChat403792" title="Chat 3CX"></iframe>
 
     <script>
         // 1. Recupera ID e Sede passati da LightSpeed
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || 'Cliente POS';
-        const locationName = urlParams.get('loc') || 'sede';
-
-        // 2. Crea la finta email usando la sede
-        const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        const emailValida = locationFormattata + '@norival.com';
-
-        // 3. Stampa i dati nei riquadri verdi in alto
-        document.getElementById('mostra-nome').innerText = businessId;
-        document.getElementById('mostra-email').innerText = emailValida;
-    </script>
-
-</body>
-</html>
+        const locationName
