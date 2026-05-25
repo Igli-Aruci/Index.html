@@ -14,9 +14,17 @@
         .dati-box { background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; margin: 20px 0; font-size: 18px; color: #2c3e50; }
         .highlight { font-weight: bold; color: #e67e22; font-size: 24px; display: block; margin-top: 5px; margin-bottom: 15px; }
         
-        /* Pulsante gigante per il tablet */
-        .btn { background: #3498db; color: white; border: none; padding: 18px 30px; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-sizing: border-box; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); }
-        .btn:active { background: #2980b9; transform: translateY(2px); }
+        /* Stile base per i pulsanti */
+        .btn { color: white; border: none; padding: 18px 30px; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-sizing: border-box; display: block; transition: 0.2s; }
+        .btn:active { transform: translateY(2px); }
+        
+        /* Pulsante principale Chat */
+        .btn-chat { background: #3498db; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); margin-bottom: 15px; }
+        .btn-chat:active { background: #2980b9; }
+
+        /* Pulsante secondario Refresh */
+        .btn-refresh { background: #95a5a6; box-shadow: 0 4px 6px rgba(149, 165, 166, 0.3); font-size: 16px; padding: 14px 20px; }
+        .btn-refresh:active { background: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -34,7 +42,9 @@
             Memorizzali e clicca sul pulsante qui sotto per parlare con noi.
         </p>
         
-        <button class="btn" onclick="apriChat()">Apri Chat 3CX</button>
+        <button class="btn btn-chat" onclick="apriChat()">Apri Chat 3CX</button>
+        
+        <button class="btn btn-refresh" onclick="window.location.reload()">🔄 Aggiorna Pagina</button>
     </div>
 
     <script>
@@ -43,11 +53,11 @@
         const businessId = urlParams.get('id') || 'Cliente POS';
         const locationName = urlParams.get('loc') || 'Sede';
 
-        // Mostra i dati a schermo (ho lasciato l'email pura senza @norival.com come richiesto)
+        // Mostra i dati a schermo 
         document.getElementById('mostra-nome').innerText = businessId;
         document.getElementById('mostra-email').innerText = locationName;
 
-        // Funzione che scatta quando si preme il pulsante
+        // Funzione che scatta quando si preme il pulsante principale
         function apriChat() {
             // Sostituisce questa pagina con la chat ufficiale, senza iframe!
             window.location.replace("https://norival.my3cx.it/LiveChat403792");
