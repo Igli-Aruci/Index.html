@@ -31,11 +31,11 @@
             <strong>Istruzioni per l'accesso alla chat:</strong><br>
             1. Tocca il dato qui sotto per copiarlo in automatico.<br>
             2. Apri la chat cliccando sul pulsante azzurro.<br>
-            3. Fai <strong>"Incolla"</strong> sia nel campo Nome che nel campo Email nella schermata successiva.
+            3. Fai <strong>"Incolla"</strong> nel campo <strong>Nome</strong> nella schermata successiva.
         </div>
         
         <div class="dati-box">
-            <span class="campo-titolo">DA INCOLLARE NEL CAMPO NOME ED EMAIL:</span>
+            <span class="campo-titolo">DA INCOLLARE NEL CAMPO NOME:</span>
             <span class="highlight" id="mostra-dato" onclick="copiaTesto('mostra-dato')">...</span>
             <span class="click-info">Seleziona per copiarlo</span>
         </div>
@@ -49,9 +49,9 @@
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
 
-        // Genera il dato unendo businessId e locationName.com
+        // Genera il dato unendo businessId e locationName con un trattino
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        const datoCompleto = businessId + '@' + locationFormattata + '.com';
+        const datoCompleto = businessId + '-' + locationFormattata;
 
         // Mostra il testo nel riquadro
         document.getElementById('mostra-dato').innerText = datoCompleto;
