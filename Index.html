@@ -18,13 +18,19 @@
         .click-info { font-size: 11px; color: #95a5a6; display: block; margin-bottom: 10px; font-style: italic; }
         
         /* Pulsanti */
-        .btn { color: white; border: none; padding: 18px 30px; font-size: 20px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-sizing: border-box; display: block; transition: 0.2s; }
+        .btn { color: white; border: none; padding: 18px 20px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-sizing: border-box; display: block; transition: 0.2s; margin-bottom: 15px; }
         .btn:active { transform: translateY(2px); }
         
-        .btn-chat { background: #3498db; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); margin-bottom: 15px; }
+        .btn-chat { background: #3498db; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); font-size: 22px; padding: 20px; }
         .btn-chat:active { background: #2980b9; }
 
-        .btn-refresh { background: #95a5a6; box-shadow: 0 4px 6px rgba(149, 165, 166, 0.3); font-size: 16px; padding: 14px 20px; }
+        /* Contenitore per affiancare Indietro e Aggiorna */
+        .bottoni-secondari { display: flex; gap: 15px; }
+        
+        .btn-back { background: #e74c3c; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3); margin-bottom: 0; }
+        .btn-back:active { background: #c0392b; }
+
+        .btn-refresh { background: #95a5a6; box-shadow: 0 4px 6px rgba(149, 165, 166, 0.3); margin-bottom: 0; }
         .btn-refresh:active { background: #7f8c8d; }
     </style>
 </head>
@@ -48,40 +54,45 @@
             <span class="highlight" id="mostra-email" onclick="copiaTesto('mostra-email')">...</span>
             <span class="click-info">Tocca la mail per copiarla</span>
         </div>
-
-        <p style="font-size: 14px; color: #7f8c8d; margin-bottom: 25px;">
-            Copia i dati e clicca sul pulsante qui sotto per aprire la chat.
-        </p>
         
-        <button class="btn btn-chat" onclick="apriChat()">Apri Chat 3CX</button>
-        <button class="btn btn-refresh" onclick="window.location.reload()">🔄 Aggiorna Pagina</button>
+        <button class="btn btn-chat" onclick="apriChat()">💬 Apri Chat 3CX</button>
+        
+        <div class="bottoni-secondari">
+            <button class="btn btn-back" onclick="vaiIndietro()">🔙 Indietro</button>
+            <button class="btn btn-refresh" onclick="aggiornaPagina()">🔄 Aggiorna</button>
+        </div>
     </div>
 
     <script>
-        // Recupera i dati inviati da LightSpeed nell'URL
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || 'Cliente POS';
         const locationName = urlParams.get('loc') || 'Sede';
 
-        // Format della mail dinamica: toglie gli spazi, mette minuscolo e aggiunge il dominio
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
         const emailCompleta = locationFormattata + '@norival.com';
 
-        // Mostra i testi pronti nei riquadri
         document.getElementById('mostra-nome').innerText = businessId;
         document.getElementById('mostra-email').innerText = emailCompleta;
 
-        // Apre la chat in una nuova scheda (o popup) in modo da mantenere visibili i dati sotto
+        // Redirect diretto perché i tablet POS bloccano popup e nuove schede
         function apriChat() {
-            window.open("https://norival.my3cx.it/LiveChat403792", "Chat3CX", "width=500,height=700,left=100,top=100,resizable=yes,scrollbars=yes");
+            window.location.href = "https://norival.my3cx.it/LiveChat403792";
         }
 
-        // Funzione per copiare il testo toccandolo
+        // Funzione per tornare al menu precedente del POS
+        function vaiIndietro() {
+            window.history.back();
+        }
+
+        // Metodo alternativo per forzare il refresh nei browser limitati
+        function aggiornaPagina() {
+            window.location.href = window.location.href;
+        }
+
         function copiaTesto(elementId) {
             const testo = document.getElementById(elementId).innerText;
             navigator.clipboard.writeText(testo);
             
-            // Un piccolo effetto visivo per far capire che è stato copiato
             const elemento = document.getElementById(elementId);
             const testoOriginale = elemento.innerText;
             elemento.innerText = "Copiato!";
