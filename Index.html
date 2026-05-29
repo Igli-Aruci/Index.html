@@ -4,18 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
-    <style>
-        /* Reset e font moderni */
-        body, html { 
-            margin: 0; padding: 0; min-height: 100vh; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f4f6f9; background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%);
-        }
+    
+    <script>
+        (function() {
+            const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
 
-        /* Layout */
+            // Funzione che lancia l'allarme quando trova il link nei dati di rete
+            function catturaLink(link) {
+                window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
+            }
+
+            // 1. Intercettiamo le WebSocket (I messaggi istantanei della chat)
+            const OrigWebSocket = window.WebSocket;
+            window.WebSocket = function(url, protocols) {
+                const ws = new OrigWebSocket(url, protocols);
+                ws.addEventListener('message', function(e) {
+                    try {
+                        const msg = typeof e.data === 'string' ? e.data : JSON.stringify(e.data);
+                        const match = msg.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    } catch(err) {}
+                });
+                return ws;
+            };
+
+            // 2. Intercettiamo le chiamate Fetch (Scaricamento dati)
+            const origFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const response = await origFetch.apply(this, args);
+                try {
+                    const clone = response.clone();
+                    clone.text().then(text => {
+                        const match = text.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    }).catch(e=>{});
+                } catch(err) {}
+                return response;
+            };
+
+            // 3. Intercettiamo le chiamate AJAX (I vecchi sistemi di caricamento)
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function() {
+                this.addEventListener('load', function() {
+                    try {
+                        const match = this.responseText.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    } catch(err) {}
+                });
+                origOpen.apply(this, arguments);
+            };
+        })();
+    </script>
+
+    <style>
+        /* Reset e layout */
+        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%); }
         .layout-wrapper { display: flex; align-items: center; justify-content: flex-start; min-height: 100vh; padding-left: 12%; box-sizing: border-box; }
-        
-        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; position: relative; }
+        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
 
         h2 { color: #1e293b; margin-top: 0; margin-bottom: 10px; font-size: 26px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 20px; }
@@ -23,12 +68,11 @@
 
         hr { border: 0; height: 1px; background: #e2e8f0; margin: 30px 0; }
         
-        /* Scanner Animazione */
-        .scanner-status { font-size: 13px; color: #f59e0b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .radar-dot { width: 10px; height: 10px; background-color: #f59e0b; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+        /* Box radar e manuale */
+        .radar-box { font-size: 13px; color: #8b5cf6; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .radar-dot { width: 10px; height: 10px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
 
-        /* Generatore manuale (Piano B) */
         .qr-title { font-size: 15px; color: #475569; font-weight: 600; margin-bottom: 12px; }
         .qr-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; background: #f8fafc; transition: 0.2s; }
         .qr-input:focus { border-color: #10b981; background: white; }
@@ -54,19 +98,19 @@
             </div>
 
             <hr>
-            
-            <div id="scanner-box" class="scanner-status">
-                <div class="radar-dot"></div> Ascolto comunicazioni segrete in corso...
+
+            <div id="radar-box" class="radar-box">
+                <div class="radar-dot"></div> Analisi pacchetti di rete in corso...
             </div>
 
             <div id="manual-box">
-                <div class="qr-title">Se lo scanner non si attiva:</div>
-                <input type="text" id="link-input" class="qr-input" placeholder="Tieni premuto sul link in chat e incolla qui">
+                <div class="qr-title">Se non compare in automatico:</div>
+                <input type="text" id="link-input" class="qr-input" placeholder="Incolla qui il link della chat">
                 <button onclick="generaQRManuale()" class="qr-btn">📱 Genera QR Code</button>
             </div>
             
             <div id="qr-result">
-                <div style="font-size: 16px; color: #10b981; font-weight: bold; margin-bottom: 10px;">✅ Link Google Meet Intercettato!</div>
+                <div style="font-size: 16px; color: #10b981; font-weight: bold; margin-bottom: 10px;" id="qr-success-msg">✅ QR Code Generato!</div>
                 <img id="qr-image" src="" alt="QR Code">
                 <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Inquadra questo codice con il telefono</div>
             </div>
@@ -78,7 +122,7 @@
     
     <script>
         // ==========================================
-        // 1. GESTIONE DATI UTENTE
+        // GESTIONE DATI UTENTE
         // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
@@ -100,71 +144,38 @@
         }
 
         // ==========================================
-        // 2. IL RADAR "MICROSPIA" DEFINITIVO
+        // GESTIONE DEL QR CODE
         // ==========================================
-        let scannerAttivo = true;
-
-        // Funzione per generare il QR e fermare il radar
-        function trovatoLink(link) {
-            if (!scannerAttivo) return;
-            scannerAttivo = false;
-            document.getElementById('scanner-box').style.display = 'none';
-            document.getElementById('manual-box').style.display = 'none';
-            
+        function mostraQR(link, automatico) {
             if(!link.startsWith('http://') && !link.startsWith('https://')) { link = 'https://' + link; }
             const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
+            
             document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('radar-box').style.display = 'none';
+            document.getElementById('manual-box').style.display = 'none';
+            
+            if (automatico) {
+                document.getElementById('qr-success-msg').innerText = "⚡ Link Intercettato in Automatico!";
+            } else {
+                document.getElementById('qr-success-msg').innerText = "✅ QR Code Generato!";
+            }
+            
             document.getElementById('qr-result').style.display = 'block';
         }
 
-        const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
-
-        // METODO A: Ascoltare i segnali nascosti di 3CX (postMessage)
-        window.addEventListener('message', function(event) {
-            if (!scannerAttivo) return;
-            // Se nel segnale di rete c'è la stringa di meet... boom!
-            try {
-                const dataString = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
-                const match = dataString.match(regexMeet);
-                if (match) {
-                    trovatoLink(match[0]);
-                }
-            } catch (e) { }
+        // Ascoltiamo il segnale del nostro Sniffer di Rete
+        window.addEventListener('LinkIntercettato', function(e) {
+            mostraQR(e.detail, true);
         });
 
-        // METODO B: MutationObserver super-aggressivo su tutto il documento
-        const observer = new MutationObserver((mutations) => {
-            if (!scannerAttivo) return;
-            for (let mutation of mutations) {
-                // Guarda nei nuovi nodi inseriti
-                if (mutation.addedNodes.length) {
-                    mutation.addedNodes.forEach(node => {
-                        if (node.textContent && node.textContent.match(regexMeet)) {
-                            trovatoLink(node.textContent.match(regexMeet)[0]);
-                        }
-                    });
-                }
-                // Guarda se cambia il testo di un nodo esistente
-                if (mutation.type === 'characterData' && mutation.target.textContent.match(regexMeet)) {
-                    trovatoLink(mutation.target.textContent.match(regexMeet)[0]);
-                }
-            }
-        });
-
-        // Avviamo l'osservazione su tutto il body e i suoi figli
-        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-
-        // ==========================================
-        // 3. GENERATORE MANUALE (Piano di riserva)
-        // ==========================================
+        // Generazione manuale (Piano di riserva)
         function generaQRManuale() {
             let link = document.getElementById('link-input').value.trim();
-            const match = link.match(regexMeet);
-            // Estrai solo il link se per caso incollano tutto il testo
+            const match = link.match(/meet\.google\.com\/[a-z0-9-]+/i);
             let finalLink = match ? match[0] : link; 
             
             if(finalLink) {
-                trovatoLink(finalLink);
+                mostraQR(finalLink, false);
             } else {
                 alert("Per favore, incolla il link della chat!");
             }
