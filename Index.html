@@ -30,7 +30,7 @@
 
         /* Generatore manuale (Piano B) */
         .qr-title { font-size: 15px; color: #475569; font-weight: 600; margin-bottom: 12px; }
-        .qr-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; background: #f8fafc; }
+        .qr-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; background: #f8fafc; transition: 0.2s; }
         .qr-input:focus { border-color: #10b981; background: white; }
         .qr-btn { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
         .qr-btn:active { transform: translateY(2px); box-shadow: none; }
@@ -56,19 +56,19 @@
             <hr>
             
             <div id="scanner-box" class="scanner-status">
-                <div class="radar-dot"></div> Ricerca link videochiamata...
+                <div class="radar-dot"></div> Ascolto comunicazioni segrete in corso...
             </div>
 
             <div id="manual-box">
-                <div class="qr-title">Se lo scanner non trova il link:</div>
-                <input type="text" id="link-input" class="qr-input" placeholder="Tieni premuto sul link e incolla qui">
+                <div class="qr-title">Se lo scanner non si attiva:</div>
+                <input type="text" id="link-input" class="qr-input" placeholder="Tieni premuto sul link in chat e incolla qui">
                 <button onclick="generaQRManuale()" class="qr-btn">📱 Genera QR Code</button>
             </div>
             
             <div id="qr-result">
-                <div style="font-size: 16px; color: #10b981; font-weight: bold; margin-bottom: 10px;">✅ Link Rilevato!</div>
+                <div style="font-size: 16px; color: #10b981; font-weight: bold; margin-bottom: 10px;">✅ Link Google Meet Intercettato!</div>
                 <img id="qr-image" src="" alt="QR Code">
-                <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Inquadra questo codice con il tuo telefono</div>
+                <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Inquadra questo codice con il telefono</div>
             </div>
 
         </div>
@@ -77,6 +77,9 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
     
     <script>
+        // ==========================================
+        // 1. GESTIONE DATI UTENTE
+        // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         let locationName = urlParams.get('loc') || 'sede';
@@ -97,78 +100,71 @@
         }
 
         // ==========================================
-        // LO SCANNER "ROBOTTINO"
+        // 2. IL RADAR "MICROSPIA" DEFINITIVO
         // ==========================================
         let scannerAttivo = true;
 
-        // Funzione hacker che scava nel DOM e negli Shadow DOM
-        function cercaLinkMagico(nodo) {
-            if (nodo.nodeType === Node.TEXT_NODE) {
-                // Cerca un link che assomiglia a meet.google.com
-                const match = nodo.textContent.match(/meet\.google\.com\/[a-z0-9-]+/i);
-                if (match) return match[0];
-            }
-            
-            if (nodo.nodeType === Node.ELEMENT_NODE) {
-                // Prova a bucare lo Shadow DOM di 3CX se non è chiuso a chiave
-                if (nodo.shadowRoot) {
-                    const risultato = cercaLinkMagico(nodo.shadowRoot);
-                    if (risultato) return risultato;
-                }
-                
-                // Prova a sbirciare dentro eventuali iframe (CORS permettendo)
-                if (nodo.tagName === 'IFRAME') {
-                    try {
-                        if (nodo.contentDocument) {
-                            const risultato = cercaLinkMagico(nodo.contentDocument);
-                            if (risultato) return risultato;
-                        }
-                    } catch(e) { /* Il browser ha bloccato l'accesso all'iframe! */ }
-                }
-
-                for (let child of nodo.childNodes) {
-                    const risultato = cercaLinkMagico(child);
-                    if (risultato) return risultato;
-                }
-            }
-            return null;
-        }
-
-        // Fai partire il radar ogni 2 secondi
-        const radarInterval = setInterval(() => {
+        // Funzione per generare il QR e fermare il radar
+        function trovatoLink(link) {
             if (!scannerAttivo) return;
+            scannerAttivo = false;
+            document.getElementById('scanner-box').style.display = 'none';
+            document.getElementById('manual-box').style.display = 'none';
             
-            const chatWidget = document.querySelector('call-us-selector');
-            if (chatWidget) {
-                const linkTrovato = cercaLinkMagico(chatWidget);
-                if (linkTrovato) {
-                    // LINK TROVATO DA SOLO!
-                    scannerAttivo = false;
-                    clearInterval(radarInterval);
-                    document.getElementById('scanner-box').style.display = 'none';
-                    document.getElementById('manual-box').style.display = 'none';
-                    mostraQRCode(linkTrovato);
-                }
-            }
-        }, 2000);
-
-        // ==========================================
-        // GENERATORE VISIVO
-        // ==========================================
-        function mostraQRCode(link) {
             if(!link.startsWith('http://') && !link.startsWith('https://')) { link = 'https://' + link; }
             const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('qr-result').style.display = 'block';
         }
 
+        const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
+
+        // METODO A: Ascoltare i segnali nascosti di 3CX (postMessage)
+        window.addEventListener('message', function(event) {
+            if (!scannerAttivo) return;
+            // Se nel segnale di rete c'è la stringa di meet... boom!
+            try {
+                const dataString = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
+                const match = dataString.match(regexMeet);
+                if (match) {
+                    trovatoLink(match[0]);
+                }
+            } catch (e) { }
+        });
+
+        // METODO B: MutationObserver super-aggressivo su tutto il documento
+        const observer = new MutationObserver((mutations) => {
+            if (!scannerAttivo) return;
+            for (let mutation of mutations) {
+                // Guarda nei nuovi nodi inseriti
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.textContent && node.textContent.match(regexMeet)) {
+                            trovatoLink(node.textContent.match(regexMeet)[0]);
+                        }
+                    });
+                }
+                // Guarda se cambia il testo di un nodo esistente
+                if (mutation.type === 'characterData' && mutation.target.textContent.match(regexMeet)) {
+                    trovatoLink(mutation.target.textContent.match(regexMeet)[0]);
+                }
+            }
+        });
+
+        // Avviamo l'osservazione su tutto il body e i suoi figli
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+        // ==========================================
+        // 3. GENERATORE MANUALE (Piano di riserva)
+        // ==========================================
         function generaQRManuale() {
             let link = document.getElementById('link-input').value.trim();
-            if(link) {
-                scannerAttivo = false; clearInterval(radarInterval);
-                document.getElementById('scanner-box').style.display = 'none';
-                document.getElementById('manual-box').style.display = 'none';
-                mostraQRCode(link);
+            const match = link.match(regexMeet);
+            // Estrai solo il link se per caso incollano tutto il testo
+            let finalLink = match ? match[0] : link; 
+            
+            if(finalLink) {
+                trovatoLink(finalLink);
             } else {
                 alert("Per favore, incolla il link della chat!");
             }
