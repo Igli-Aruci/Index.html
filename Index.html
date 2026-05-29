@@ -9,9 +9,7 @@
         .container { background: white; border-radius: 12px; padding: 40px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
         h2 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; font-size: 24px; }
         
-        /* Box di conferma che tutto è andato a buon fine */
         .success-box { background: #e8f8f5; border: 2px solid #1abc9c; padding: 20px; border-radius: 8px; color: #27ae60; font-size: 18px; margin-bottom: 20px; font-weight: bold; }
-        
         .istruzioni { color: #34495e; font-size: 18px; line-height: 1.6; }
     </style>
 </head>
@@ -19,40 +17,28 @@
 
     <div class="container">
         <h2>Assistenza NO RIVAL</h2>
-        
-        <div class="success-box">
-            ✅ Connessione Stabilita
-        </div>
-        
+        <div class="success-box">✅ Connessione Stabilita</div>
         <div class="istruzioni">
-            I tuoi dati del POS sono stati <strong>caricati in automatico</strong>.<br><br>
+            I tuoi dati del POS sono pronti.<br><br>
             Clicca sul <strong>pallino della chat</strong> in basso a destra per parlare direttamente con noi!
         </div>
     </div>
 
-    <div id="chat-widget-container"></div>
-
+    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
+    
     <script>
-        // 1. Recupera i dati passati da LightSpeed nell'URL
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
 
-        // 2. Unisce l'ID e la Sede togliendo gli spazi (es: 12345-nometuasede)
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
         const datoCompleto = businessId + '-' + locationFormattata;
 
-        // 3. Generiamo il Widget 3CX inserendogli il nome a forza
-        const chatWidget = document.createElement('call-us-selector');
-        chatWidget.setAttribute('phonesystem-url', 'https://norival.my3cx.it');
-        chatWidget.setAttribute('party', 'LiveChat385165');
-        
-        // Attributi speciali per dire a 3CX di pre-compilare il campo NOME
-        chatWidget.setAttribute('visitor-name', datoCompleto);
-        chatWidget.setAttribute('default-user-name', datoCompleto);
-
-        // Stampiamo il widget sulla pagina
-        document.getElementById('chat-widget-container').appendChild(chatWidget);
+        const widget = document.getElementById('widget-3cx');
+        if(widget) {
+            widget.setAttribute('visitor-name', datoCompleto);
+            widget.setAttribute('default-user-name', datoCompleto);
+        }
     </script>
 
     <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
