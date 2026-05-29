@@ -87,15 +87,19 @@
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
         
-        // Recupera il nome utente dal link (cerca 'user' o 'username')
+        // Recupera il nome utente dal link
         const userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // Mostra il nome a schermo
+        // Mostra il nome a schermo nel box "Benvenuto"
         document.getElementById('display-user').innerText = userName;
 
-        // Prepara il dato per la chat
+        // Prepara il dato per la chat unendo Username, ID e Location
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        const datoCompleto = businessId + '-' + locationFormattata;
+        // Rimuoviamo eventuali spazi anche dall'username (es. "Mario Rossi" diventa "MarioRossi")
+        const userFormattato = userName.replace(/\s+/g, ''); 
+        
+        // Nuovo formato: Username-businessId-locationName
+        const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
 
         // Inietta il dato nel widget
         const widget = document.getElementById('widget-3cx');
