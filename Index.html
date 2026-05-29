@@ -15,7 +15,7 @@
             background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%);
         }
 
-        /* Layout: Centriamo in verticale, ma spostiamo a sinistra per fare spazio alla chat */
+        /* Layout: Spostiamo a sinistra per fare spazio alla chat */
         .layout-wrapper {
             display: flex;
             align-items: center;
@@ -25,7 +25,7 @@
             box-sizing: border-box;
         }
 
-        /* Il riquadro bianco essenziale */
+        /* Il riquadro bianco */
         .container { 
             background: white; 
             border-radius: 18px; 
@@ -58,12 +58,34 @@
             line-height: 1.5; 
         }
 
+        /* ================================== */
+        /* STILI PER IL GENERATORE QR         */
+        /* ================================== */
+        hr { border: 0; height: 1px; background: #e2e8f0; margin: 30px 0; }
+        
+        .qr-title { font-size: 15px; color: #475569; font-weight: 600; margin-bottom: 12px; }
+        
+        .qr-input { 
+            width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; 
+            box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; 
+            outline: none; transition: 0.2s; background: #f8fafc;
+        }
+        .qr-input:focus { border-color: #10b981; background: white; }
+        
+        .qr-btn { 
+            width: 100%; background: #10b981; color: white; border: none; padding: 14px; 
+            border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; 
+            transition: 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); 
+        }
+        .qr-btn:active { transform: translateY(2px); box-shadow: none; }
+
+        #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.4s ease-out; }
+        #qr-image { width: 160px; height: 160px; border-radius: 12px; border: 3px solid #f1f5f9; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
         @media (max-width: 900px) {
-            .layout-wrapper {
-                justify-content: center;
-                padding-left: 20px;
-                padding-right: 20px;
-            }
+            .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; }
         }
     </style>
 </head>
@@ -77,6 +99,17 @@
             <div class="istruzioni">
                 Siamo a tua disposizione.<br>Clicca sul pallino in basso a destra per avviare la chat.
             </div>
+
+            <hr>
+            <div class="qr-title">🔗 Hai ricevuto un link nella chat?</div>
+            <input type="text" id="link-input" class="qr-input" placeholder="Tieni premuto sul link e incolla qui">
+            <button onclick="generaQR()" class="qr-btn">📱 Genera QR Code</button>
+            
+            <div id="qr-result">
+                <img id="qr-image" src="" alt="QR Code">
+                <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Inquadra questo codice con il tuo telefono</div>
+            </div>
+
         </div>
     </div>
 
@@ -88,23 +121,46 @@
         let locationName = urlParams.get('loc') || 'sede';
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // FILTRO PULIZIA: Rimuove asterischi e simboli speciali che bloccano 3CX
+        // Filtro sicurezza per evitare il blocco di 3CX
         locationName = locationName.replace(/[*#@!$%&]/g, '');
         userName = userName.replace(/[*#@!$%&]/g, '');
         
-        // Mostra il nome a schermo pulito
+        // Stampa il nome
         document.getElementById('display-user').innerText = userName.trim();
 
-        // Prepara il dato per la chat mantenendo gli spazi
+        // Dati pronti per l'auto-compilazione
         const locationFormattata = locationName.trim();
         const userFormattato = userName.trim(); 
         const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
 
-        // Inietta il dato nel widget
         const widget = document.getElementById('widget-3cx');
         if(widget) {
             widget.setAttribute('visitor-name', datoCompleto);
             widget.setAttribute('default-user-name', datoCompleto);
+        }
+
+        // ==================================
+        // FUNZIONE CHE CREA IL QR CODE
+        // ==================================
+        function generaQR() {
+            let link = document.getElementById('link-input').value.trim();
+            
+            if(link) {
+                // Assicuriamoci che il link sia un formato corretto per i telefoni
+                if(!link.startsWith('http://') && !link.startsWith('https://')) {
+                    link = 'https://' + link;
+                }
+                
+                // Usiamo l'API di qrserver per creare l'immagine in tempo reale
+                const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
+                
+                // Mostriamo l'immagine sullo schermo con animazione
+                document.getElementById('qr-image').src = qrUrl;
+                document.getElementById('qr-result').style.display = 'block';
+            } else {
+                // Piccolo avviso se premono il tasto senza aver incollato niente
+                alert("Per favore, incolla prima un link nel campo di testo!");
+            }
         }
     </script>
 
