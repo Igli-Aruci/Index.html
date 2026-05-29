@@ -9,12 +9,11 @@
         (function() {
             const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
 
-            // Funzione che lancia l'allarme quando trova il link nei dati di rete
             function catturaLink(link) {
                 window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
             }
 
-            // 1. Intercettiamo le WebSocket (I messaggi istantanei della chat)
+            // 1. Intercettiamo le WebSocket
             const OrigWebSocket = window.WebSocket;
             window.WebSocket = function(url, protocols) {
                 const ws = new OrigWebSocket(url, protocols);
@@ -28,7 +27,7 @@
                 return ws;
             };
 
-            // 2. Intercettiamo le chiamate Fetch (Scaricamento dati)
+            // 2. Intercettiamo le chiamate Fetch
             const origFetch = window.fetch;
             window.fetch = async function(...args) {
                 const response = await origFetch.apply(this, args);
@@ -42,7 +41,7 @@
                 return response;
             };
 
-            // 3. Intercettiamo le chiamate AJAX (I vecchi sistemi di caricamento)
+            // 3. Intercettiamo le chiamate AJAX
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function() {
                 this.addEventListener('load', function() {
@@ -68,21 +67,42 @@
 
         hr { border: 0; height: 1px; background: #e2e8f0; margin: 30px 0; }
         
-        /* Box radar e manuale */
-        .radar-box { font-size: 13px; color: #8b5cf6; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .radar-dot { width: 10px; height: 10px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
+        /* Box radar (solo pallino) */
+        .radar-box { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
+        .radar-dot { width: 12px; height: 12px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
 
-        .qr-title { font-size: 15px; color: #475569; font-weight: 600; margin-bottom: 12px; }
-        .qr-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; background: #f8fafc; transition: 0.2s; }
-        .qr-input:focus { border-color: #10b981; background: white; }
-        .qr-btn { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
-        .qr-btn:active { transform: translateY(2px); box-shadow: none; }
+        /* Nuovo Stile per il QR Code iper-visibile */
+        #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.5s ease-out; }
+        
+        .testo-scansione {
+            font-size: 24px;
+            color: #1e293b;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
 
-        #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.4s ease-out; }
-        #qr-image { width: 180px; height: 180px; border-radius: 12px; border: 3px solid #f1f5f9; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .testo-sottotitolo {
+            display: block;
+            font-size: 16px;
+            color: #10b981;
+            font-weight: 700;
+            margin-top: 5px;
+        }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        #qr-image { 
+            width: 200px; 
+            height: 200px; 
+            border-radius: 16px; 
+            border: 4px solid #10b981; 
+            padding: 8px; 
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); 
+            background: white;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) { .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; } }
     </style>
 </head>
@@ -100,19 +120,15 @@
             <hr>
 
             <div id="radar-box" class="radar-box">
-                <div class="radar-dot"></div> Analisi pacchetti di rete in corso...
-            </div>
-
-            <div id="manual-box">
-                <div class="qr-title">Se non compare in automatico:</div>
-                <input type="text" id="link-input" class="qr-input" placeholder="Incolla qui il link della chat">
-                <button onclick="generaQRManuale()" class="qr-btn">📱 Genera QR Code</button>
+                <div class="radar-dot"></div>
             </div>
             
             <div id="qr-result">
-                <div style="font-size: 16px; color: #10b981; font-weight: bold; margin-bottom: 10px;" id="qr-success-msg">✅ QR Code Generato!</div>
+                <div class="testo-scansione">
+                    📱 SCANSIONA IL CODICE
+                    <span class="testo-sottotitolo">con la fotocamera del tuo telefono</span>
+                </div>
                 <img id="qr-image" src="" alt="QR Code">
-                <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Inquadra questo codice con il telefono</div>
             </div>
 
         </div>
@@ -144,42 +160,22 @@
         }
 
         // ==========================================
-        // GESTIONE DEL QR CODE
+        // GESTIONE DEL QR CODE AUTOMATICO
         // ==========================================
-        function mostraQR(link, automatico) {
+        function mostraQR(link) {
             if(!link.startsWith('http://') && !link.startsWith('https://')) { link = 'https://' + link; }
             const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
             
+            // Imposta l'immagine e cambia la visualizzazione
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('radar-box').style.display = 'none';
-            document.getElementById('manual-box').style.display = 'none';
-            
-            if (automatico) {
-                document.getElementById('qr-success-msg').innerText = "⚡ Link Intercettato in Automatico!";
-            } else {
-                document.getElementById('qr-success-msg').innerText = "✅ QR Code Generato!";
-            }
-            
             document.getElementById('qr-result').style.display = 'block';
         }
 
         // Ascoltiamo il segnale del nostro Sniffer di Rete
         window.addEventListener('LinkIntercettato', function(e) {
-            mostraQR(e.detail, true);
+            mostraQR(e.detail);
         });
-
-        // Generazione manuale (Piano di riserva)
-        function generaQRManuale() {
-            let link = document.getElementById('link-input').value.trim();
-            const match = link.match(/meet\.google\.com\/[a-z0-9-]+/i);
-            let finalLink = match ? match[0] : link; 
-            
-            if(finalLink) {
-                mostraQR(finalLink, false);
-            } else {
-                alert("Per favore, incolla il link della chat!");
-            }
-        }
     </script>
 
     <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
