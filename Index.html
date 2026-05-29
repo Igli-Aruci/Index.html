@@ -85,15 +85,17 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
-        const locationName = urlParams.get('loc') || 'sede';
+        let locationName = urlParams.get('loc') || 'sede';
+        let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // Recupera il nome utente dal link (cerca 'user' o 'username')
-        const userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
+        // FILTRO PULIZIA: Rimuove asterischi e simboli speciali che bloccano 3CX
+        locationName = locationName.replace(/[*#@!$%&]/g, '');
+        userName = userName.replace(/[*#@!$%&]/g, '');
         
-        // Mostra il nome a schermo
-        document.getElementById('display-user').innerText = userName;
+        // Mostra il nome a schermo pulito
+        document.getElementById('display-user').innerText = userName.trim();
 
-        // Prepara il dato per la chat mantenendo gli spazi (usa solo trim per pulire gli estremi)
+        // Prepara il dato per la chat mantenendo gli spazi
         const locationFormattata = locationName.trim();
         const userFormattato = userName.trim(); 
         const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
