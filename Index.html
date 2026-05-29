@@ -5,43 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        body { font-family: sans-serif; background-color: #ecf0f1; text-align: center; margin: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; height: 90vh; }
+        body { font-family: sans-serif; background-color: #ecf0f1; text-align: center; margin: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; height: 85vh; }
         .container { background: white; border-radius: 12px; padding: 40px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
         h2 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; font-size: 24px; }
-        
-        .success-box { background: #e8f8f5; border: 2px solid #1abc9c; padding: 20px; border-radius: 8px; color: #27ae60; font-size: 18px; margin-bottom: 20px; font-weight: bold; }
-        .istruzioni { color: #34495e; font-size: 18px; line-height: 1.6; }
+        .istruzioni { color: #34495e; font-size: 16px; margin-bottom: 20px; line-height: 1.5; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #3498db; }
+        .dati-box { background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .campo-titolo { font-size: 14px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 10px; }
+        .highlight { font-weight: bold; color: #e67e22; font-size: 24px; display: inline-block; background: white; padding: 10px 20px; border-radius: 8px; border: 2px solid #bdc3c7; cursor: pointer; user-select: all; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .highlight:active { background: #d5f5e3; transform: translateY(2px); }
+        .click-info { font-size: 13px; color: #95a5a6; display: block; margin-top: 10px; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h2>Assistenza NO RIVAL</h2>
-        <div class="success-box">✅ Connessione Stabilita</div>
         <div class="istruzioni">
-            I tuoi dati del POS sono pronti.<br><br>
-            Clicca sul <strong>pallino della chat</strong> in basso a destra per parlare direttamente con noi!
+            <strong>Tentativo di connessione magica in corso...</strong><br><br>
+            Se il campo Nome risulta vuoto:<br>
+            1️⃣ Tocca il riquadro sotto per copiare il codice.<br>
+            2️⃣ Fai "Incolla" nella chat.
+        </div>
+        
+        <div class="dati-box">
+            <span class="campo-titolo">IL TUO CODICE POS:</span>
+            <span class="highlight" id="mostra-dato" onclick="copiaTesto('mostra-dato')">...</span>
+            <span class="click-info">👆 Se serve, tocca qui per copiare</span>
         </div>
     </div>
 
-    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
-    
+    <call-us-selector phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
-
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
         const datoCompleto = businessId + '-' + locationFormattata;
 
-        const widget = document.getElementById('widget-3cx');
-        if(widget) {
-            widget.setAttribute('visitor-name', datoCompleto);
-            widget.setAttribute('default-user-name', datoCompleto);
-        }
-    </script>
+        document.getElementById('mostra-dato').innerText = datoCompleto;
 
-    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+        function copiaTesto(elementId) {
+            const testo = document.getElementById(elementId).innerText;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(testo);
+            } else {
+                let textArea = document.createElement("textarea");
+                textArea.value = testo; document.body.appendChild(textArea);
+                textArea.focus(); textArea.select(); document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            const elemento = document.getElementById(elementId);
+            const testoOriginale = elemento.innerText;
+            elemento.innerText = "✅ COPIATO!"; elemento.style.color = "#27ae60"; elemento.style.borderColor = "#27ae60";
+            setTimeout(() => { elemento.innerText = testoOriginale; elemento.style.color = "#e67e22"; elemento.style.borderColor = "#bdc3c7"; }, 1500);
+        }
+
+        // ==========================================
+        // IL TENTATIVO FINALE "BUCA-CASSAFORTE"
+        // ==========================================
+        let tentativi = 0;
+        const intervalloMagico = setInterval(() => {
+            tentativi++;
+            const widget = document.querySelector('call-us-selector');
+            
+            // Se troviamo il widget e la cassaforte (shadowRoot) è aperta...
+            if (widget && widget.shadowRoot) {
+                // Cerchiamo qualsiasi campo input di tipo testo dentro la chat
+                const campoNome = widget.shadowRoot.querySelector('input[type="text"], input[name="name"]');
+                
+                if (campoNome) {
+                    campoNome.value = datoCompleto; // Inseriamo il dato
+                    // Simuliamo la digitazione per sbloccare il bottone di avvio chat
+                    campoNome.dispatchEvent(new Event('input', { bubbles: true }));
+                    campoNome.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    clearInterval(intervalloMagico); // Fermiamo il timer, ce l'abbiamo fatta!
+                }
+            }
+            
+            // Smettiamo di provare dopo 10 secondi (20 tentativi) per non bloccare il tablet
+            if (tentativi > 20) {
+                clearInterval(intervalloMagico);
+            }
+        }, 500);
+    </script>
 
 </body>
 </html>
