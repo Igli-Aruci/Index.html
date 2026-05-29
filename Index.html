@@ -69,47 +69,4 @@
 </head>
 <body>
 
-    <div class="layout-wrapper">
-        <div class="container">
-            <h2>Assistenza NO RIVAL</h2>
-            <div class="benvenuto">Benvenuto <span id="display-user"></span></div>
-            
-            <div class="istruzioni">
-                Siamo a tua disposizione.<br>Clicca sul pallino in basso a destra per avviare la chat.
-            </div>
-        </div>
-    </div>
-
-    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
-    
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const businessId = urlParams.get('id') || '12345';
-        const locationName = urlParams.get('loc') || 'sede';
-        
-        // Recupera il nome utente dal link
-        const userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
-        
-        // Mostra il nome a schermo nel box "Benvenuto"
-        document.getElementById('display-user').innerText = userName;
-
-        // Prepara il dato per la chat unendo Username, ID e Location
-        const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
-        // Rimuoviamo eventuali spazi anche dall'username (es. "Mario Rossi" diventa "MarioRossi")
-        const userFormattato = userName.replace(/\s+/g, ''); 
-        
-        // Nuovo formato: Username-businessId-locationName
-        const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
-
-        // Inietta il dato nel widget
-        const widget = document.getElementById('widget-3cx');
-        if(widget) {
-            widget.setAttribute('visitor-name', datoCompleto);
-            widget.setAttribute('default-user-name', datoCompleto);
-        }
-    </script>
-
-    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
-
-</body>
-</html>
+    <div class
