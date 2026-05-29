@@ -5,88 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        /* Reset e font moderni stile iPad/Apple */
+        /* Reset e font moderni */
         body, html { 
-            margin: 0; 
-            padding: 0; 
-            min-height: 100vh; 
+            margin: 0; padding: 0; min-height: 100vh; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f4f6f9; 
-            background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%);
+            background-color: #f4f6f9; background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%);
         }
 
-        /* Layout: Spostiamo a sinistra per fare spazio alla chat */
-        .layout-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            padding-left: 12%; 
-            box-sizing: border-box;
-        }
-
-        /* Il riquadro bianco */
-        .container { 
-            background: white; 
-            border-radius: 18px; 
-            padding: 40px; 
-            box-shadow: 0 12px 40px rgba(0,0,0,0.08); 
-            width: 100%;
-            max-width: 420px; 
-            text-align: center; 
-        }
-
-        h2 { 
-            color: #1e293b; 
-            margin-top: 0; 
-            margin-bottom: 10px; 
-            font-size: 26px; 
-            font-weight: 700;
-        }
+        /* Layout */
+        .layout-wrapper { display: flex; align-items: center; justify-content: flex-start; min-height: 100vh; padding-left: 12%; box-sizing: border-box; }
         
-        .benvenuto {
-            color: #3b82f6;
-            font-size: 22px;
-            font-weight: 600;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-        
-        .istruzioni { 
-            color: #64748b; 
-            font-size: 16px; 
-            line-height: 1.5; 
-        }
+        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; position: relative; }
 
-        /* ================================== */
-        /* STILI PER IL GENERATORE QR         */
-        /* ================================== */
+        h2 { color: #1e293b; margin-top: 0; margin-bottom: 10px; font-size: 26px; font-weight: 700; }
+        .benvenuto { color: #3b82f6; font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 20px; }
+        .istruzioni { color: #64748b; font-size: 16px; line-height: 1.5; }
+
         hr { border: 0; height: 1px; background: #e2e8f0; margin: 30px 0; }
         
+        /* Scanner Animazione */
+        .scanner-status { font-size: 13px; color: #f59e0b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .radar-dot { width: 10px; height: 10px; background-color: #f59e0b; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+
+        /* Generatore manuale (Piano B) */
         .qr-title { font-size: 15px; color: #475569; font-weight: 600; margin-bottom: 12px; }
-        
-        .qr-input { 
-            width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; 
-            box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; 
-            outline: none; transition: 0.2s; background: #f8fafc;
-        }
+        .qr-input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; margin-bottom: 12px; font-size: 15px; text-align: center; outline: none; background: #f8fafc; }
         .qr-input:focus { border-color: #10b981; background: white; }
-        
-        .qr-btn { 
-            width: 100%; background: #10b981; color: white; border: none; padding: 14px; 
-            border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; 
-            transition: 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); 
-        }
+        .qr-btn { width: 100%; background: #10b981; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
         .qr-btn:active { transform: translateY(2px); box-shadow: none; }
 
         #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.4s ease-out; }
-        #qr-image { width: 160px; height: 160px; border-radius: 12px; border: 3px solid #f1f5f9; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        #qr-image { width: 180px; height: 180px; border-radius: 12px; border: 3px solid #f1f5f9; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        @media (max-width: 900px) {
-            .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; }
-        }
+        @media (max-width: 900px) { .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; } }
     </style>
 </head>
 <body>
@@ -101,11 +54,19 @@
             </div>
 
             <hr>
-            <div class="qr-title">🔗 Hai ricevuto un link nella chat?</div>
-            <input type="text" id="link-input" class="qr-input" placeholder="Tieni premuto sul link e incolla qui">
-            <button onclick="generaQR()" class="qr-btn">📱 Genera QR Code</button>
+            
+            <div id="scanner-box" class="scanner-status">
+                <div class="radar-dot"></div> Ricerca link videochiamata...
+            </div>
+
+            <div id="manual-box">
+                <div class="qr-title">Se lo scanner non trova il link:</div>
+                <input type="text" id="link-input" class="qr-input" placeholder="Tieni premuto sul link e incolla qui">
+                <button onclick="generaQRManuale()" class="qr-btn">📱 Genera QR Code</button>
+            </div>
             
             <div id="qr-result">
+                <div style="font-size: 16px; color: #10b981; font-weight: bold; margin-bottom: 10px;">✅ Link Rilevato!</div>
                 <img id="qr-image" src="" alt="QR Code">
                 <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Inquadra questo codice con il tuo telefono</div>
             </div>
@@ -121,14 +82,10 @@
         let locationName = urlParams.get('loc') || 'sede';
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // Filtro sicurezza per evitare il blocco di 3CX
         locationName = locationName.replace(/[*#@!$%&]/g, '');
         userName = userName.replace(/[*#@!$%&]/g, '');
-        
-        // Stampa il nome
         document.getElementById('display-user').innerText = userName.trim();
 
-        // Dati pronti per l'auto-compilazione
         const locationFormattata = locationName.trim();
         const userFormattato = userName.trim(); 
         const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
@@ -139,27 +96,81 @@
             widget.setAttribute('default-user-name', datoCompleto);
         }
 
-        // ==================================
-        // FUNZIONE CHE CREA IL QR CODE
-        // ==================================
-        function generaQR() {
-            let link = document.getElementById('link-input').value.trim();
+        // ==========================================
+        // LO SCANNER "ROBOTTINO"
+        // ==========================================
+        let scannerAttivo = true;
+
+        // Funzione hacker che scava nel DOM e negli Shadow DOM
+        function cercaLinkMagico(nodo) {
+            if (nodo.nodeType === Node.TEXT_NODE) {
+                // Cerca un link che assomiglia a meet.google.com
+                const match = nodo.textContent.match(/meet\.google\.com\/[a-z0-9-]+/i);
+                if (match) return match[0];
+            }
             
-            if(link) {
-                // Assicuriamoci che il link sia un formato corretto per i telefoni
-                if(!link.startsWith('http://') && !link.startsWith('https://')) {
-                    link = 'https://' + link;
+            if (nodo.nodeType === Node.ELEMENT_NODE) {
+                // Prova a bucare lo Shadow DOM di 3CX se non è chiuso a chiave
+                if (nodo.shadowRoot) {
+                    const risultato = cercaLinkMagico(nodo.shadowRoot);
+                    if (risultato) return risultato;
                 }
                 
-                // Usiamo l'API di qrserver per creare l'immagine in tempo reale
-                const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
-                
-                // Mostriamo l'immagine sullo schermo con animazione
-                document.getElementById('qr-image').src = qrUrl;
-                document.getElementById('qr-result').style.display = 'block';
+                // Prova a sbirciare dentro eventuali iframe (CORS permettendo)
+                if (nodo.tagName === 'IFRAME') {
+                    try {
+                        if (nodo.contentDocument) {
+                            const risultato = cercaLinkMagico(nodo.contentDocument);
+                            if (risultato) return risultato;
+                        }
+                    } catch(e) { /* Il browser ha bloccato l'accesso all'iframe! */ }
+                }
+
+                for (let child of nodo.childNodes) {
+                    const risultato = cercaLinkMagico(child);
+                    if (risultato) return risultato;
+                }
+            }
+            return null;
+        }
+
+        // Fai partire il radar ogni 2 secondi
+        const radarInterval = setInterval(() => {
+            if (!scannerAttivo) return;
+            
+            const chatWidget = document.querySelector('call-us-selector');
+            if (chatWidget) {
+                const linkTrovato = cercaLinkMagico(chatWidget);
+                if (linkTrovato) {
+                    // LINK TROVATO DA SOLO!
+                    scannerAttivo = false;
+                    clearInterval(radarInterval);
+                    document.getElementById('scanner-box').style.display = 'none';
+                    document.getElementById('manual-box').style.display = 'none';
+                    mostraQRCode(linkTrovato);
+                }
+            }
+        }, 2000);
+
+        // ==========================================
+        // GENERATORE VISIVO
+        // ==========================================
+        function mostraQRCode(link) {
+            if(!link.startsWith('http://') && !link.startsWith('https://')) { link = 'https://' + link; }
+            const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
+            document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('qr-result').style.display = 'block';
+        }
+
+        function generaQRManuale() {
+            let link = document.getElementById('link-input').value.trim();
+            if(link) {
+                scannerAttivo = false; clearInterval(radarInterval);
+                document.getElementById('scanner-box').style.display = 'none';
+                document.getElementById('manual-box').style.display = 'none';
+                mostraQRCode(link);
             } else {
-                // Piccolo avviso se premono il tasto senza aver incollato niente
-                alert("Per favore, incolla prima un link nel campo di testo!");
+                alert("Per favore, incolla il link della chat!");
             }
         }
     </script>
