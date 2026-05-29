@@ -5,16 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        body { font-family: sans-serif; background-color: #ecf0f1; text-align: center; margin: 0; padding: 20px; }
-        .container { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 40px auto; }
-        h2 { color: #2c3e50; margin-top: 0; }
-        .istruzioni { color: #34495e; font-size: 16px; margin-bottom: 10px; line-height: 1.5; text-align: left; background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #1abc9c; }
+        body { font-family: sans-serif; background-color: #ecf0f1; text-align: center; margin: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; height: 90vh; }
+        .container { background: white; border-radius: 12px; padding: 40px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+        h2 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; font-size: 24px; }
         
-        .dati-box { background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; }
-        .campo-titolo { font-size: 14px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; display: block; margin-top: 10px; }
-        .highlight { font-weight: bold; color: #e67e22; font-size: 22px; display: inline-block; margin-top: 5px; margin-bottom: 5px; background: white; padding: 4px 10px; border-radius: 4px; border: 1px solid #bdc3c7; cursor: pointer; user-select: all; }
-        .highlight:active { background: #d5f5e3; }
-        .click-info { font-size: 11px; color: #95a5a6; display: block; margin-bottom: 10px; font-style: italic; }
+        /* Box di conferma che tutto è andato a buon fine */
+        .success-box { background: #e8f8f5; border: 2px solid #1abc9c; padding: 20px; border-radius: 8px; color: #27ae60; font-size: 18px; margin-bottom: 20px; font-weight: bold; }
+        
+        .istruzioni { color: #34495e; font-size: 18px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -22,17 +20,13 @@
     <div class="container">
         <h2>Assistenza NO RIVAL</h2>
         
-        <div class="istruzioni">
-            <strong>Istruzioni per la chat:</strong><br>
-            1. <strong>Tocca il dato</strong> qui sotto per copiarlo in automatico.<br>
-            2. Clicca sul <strong>pallino della chat</strong> in basso a destra.<br>
-            3. Fai <strong>"Incolla"</strong> nel campo <strong>Nome</strong> per iniziare a parlare con noi.
+        <div class="success-box">
+            ✅ Connessione Stabilita
         </div>
         
-        <div class="dati-box">
-            <span class="campo-titolo">DA INCOLLARE NEL CAMPO NOME:</span>
-            <span class="highlight" id="mostra-dato" onclick="copiaTesto('mostra-dato')">...</span>
-            <span class="click-info">Tocca qui per copiare</span>
+        <div class="istruzioni">
+            I tuoi dati del POS sono stati <strong>caricati in automatico</strong>.<br><br>
+            Clicca sul <strong>pallino della chat</strong> in basso a destra per parlare direttamente con noi!
         </div>
     </div>
 
@@ -40,39 +34,23 @@
     <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 
     <script>
-        // Gestione variabili da LightSpeed
+        // 1. Recupera i dati passati da LightSpeed nell'URL
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
 
+        // 2. Unisce l'ID e la Sede con il trattino
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
         const datoCompleto = businessId + '-' + locationFormattata;
 
-        document.getElementById('mostra-dato').innerText = datoCompleto;
-
-        // Funzione di copia testo
-        function copiaTesto(elementId) {
-            const testo = document.getElementById(elementId).innerText;
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(testo);
-            } else {
-                let textArea = document.createElement("textarea");
-                textArea.value = testo;
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-            }
+        // 3. Trova il widget di 3CX e gli inietta i dati del Nome in automatico
+        const chatWidget = document.querySelector('call-us-selector');
+        if (chatWidget) {
+            chatWidget.setAttribute('visitor-name', datoCompleto);
             
-            const elemento = document.getElementById(elementId);
-            const testoOriginale = elemento.innerText;
-            elemento.innerText = "Copiato!";
-            elemento.style.color = "#1abc9c";
-            setTimeout(() => { 
-                elemento.innerText = testoOriginale; 
-                elemento.style.color = "#e67e22";
-            }, 1000);
+            // NOTA: Se in futuro 3CX richiederà obbligatoriamente anche l'Email, 
+            // basterà togliere i due slash (//) dalla riga qui sotto:
+            // chatWidget.setAttribute('visitor-email', datoCompleto + '@norival.com');
         }
     </script>
 
