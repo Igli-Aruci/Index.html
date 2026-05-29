@@ -25,7 +25,7 @@
         <div class="istruzioni">
             <strong>Istruzioni per la chat:</strong><br>
             1. <strong>Tocca il dato</strong> qui sotto per copiarlo in automatico.<br>
-            2. Clicca sul <strong>fumetto della chat</strong> in basso a destra.<br>
+            2. Clicca sul <strong>pallino della chat</strong> in basso a destra.<br>
             3. Fai <strong>"Incolla"</strong> nel campo <strong>Nome</strong> per iniziare a parlare con noi.
         </div>
         
@@ -37,7 +37,7 @@
     </div>
 
     <call-us-selector phonesystem-url="https://norival.my3cx.it" party="LiveChat403792"></call-us-selector>
-    <script defer src="https://norival.my3cx.it/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 
     <script>
         // Gestione variabili da LightSpeed
@@ -50,7 +50,7 @@
 
         document.getElementById('mostra-dato').innerText = datoCompleto;
 
-        // Funzione di copia testo intelligente
+        // Funzione di copia testo
         function copiaTesto(elementId) {
             const testo = document.getElementById(elementId).innerText;
             if (navigator.clipboard && window.isSecureContext) {
