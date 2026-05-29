@@ -30,8 +30,7 @@
         </div>
     </div>
 
-    <call-us-selector phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
-    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+    <div id="chat-widget-container"></div>
 
     <script>
         // 1. Recupera i dati passati da LightSpeed nell'URL
@@ -39,20 +38,24 @@
         const businessId = urlParams.get('id') || '12345';
         const locationName = urlParams.get('loc') || 'sede';
 
-        // 2. Unisce l'ID e la Sede con il trattino
+        // 2. Unisce l'ID e la Sede togliendo gli spazi (es: 12345-nometuasede)
         const locationFormattata = locationName.replace(/\s+/g, '').toLowerCase();
         const datoCompleto = businessId + '-' + locationFormattata;
 
-        // 3. Trova il widget di 3CX e gli inietta i dati del Nome in automatico
-        const chatWidget = document.querySelector('call-us-selector');
-        if (chatWidget) {
-            chatWidget.setAttribute('visitor-name', datoCompleto);
-            
-            // NOTA: Se in futuro 3CX richiederà obbligatoriamente anche l'Email, 
-            // basterà togliere i due slash (//) dalla riga qui sotto:
-            // chatWidget.setAttribute('visitor-email', datoCompleto + '@norival.com');
-        }
+        // 3. Generiamo il Widget 3CX inserendogli il nome a forza
+        const chatWidget = document.createElement('call-us-selector');
+        chatWidget.setAttribute('phonesystem-url', 'https://norival.my3cx.it');
+        chatWidget.setAttribute('party', 'LiveChat385165');
+        
+        // Attributi speciali per dire a 3CX di pre-compilare il campo NOME
+        chatWidget.setAttribute('visitor-name', datoCompleto);
+        chatWidget.setAttribute('default-user-name', datoCompleto);
+
+        // Stampiamo il widget sulla pagina
+        document.getElementById('chat-widget-container').appendChild(chatWidget);
     </script>
+
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 
 </body>
 </html>
