@@ -30,25 +30,31 @@
     </script>
 
     <style>
+        /* Reset e layout */
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%); }
         .layout-wrapper { display: flex; align-items: center; justify-content: flex-start; min-height: 100vh; padding-left: 12%; box-sizing: border-box; }
         .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
+
         h2 { color: #1e293b; margin-top: 0; margin-bottom: 10px; font-size: 26px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 20px; }
         .istruzioni { color: #64748b; font-size: 16px; line-height: 1.5; margin-bottom: 20px; }
         hr { border: 0; height: 1px; background: #e2e8f0; margin: 25px 0; }
         
+        /* Rilevatore Offline (Banner Nascosto) */
         #offline-banner { position: fixed; top: -80px; left: 0; width: 100%; background-color: #ef4444; color: white; text-align: center; padding: 18px; font-weight: 800; font-size: 16px; z-index: 9999; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: top 0.4s; text-transform: uppercase; box-sizing: border-box; }
         #offline-banner.active { top: 0; }
         
+        /* Box radar (solo pallino) */
         .radar-box { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
         .radar-dot { width: 12px; height: 12px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
 
+        /* Bottone SOS Meet */
         .sos-btn { width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); text-transform: uppercase; letter-spacing: 0.5px; }
         .sos-btn:active { transform: translateY(2px); box-shadow: none; }
         .sos-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
 
+        /* Stile QR Code iper-visibile */
         #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.5s ease-out; }
         .testo-scansione { font-size: 22px; color: #1e293b; font-weight: 800; margin-bottom: 20px; line-height: 1.2; text-transform: uppercase; }
         .testo-sottotitolo { display: block; font-size: 15px; color: #10b981; font-weight: 700; margin-top: 5px; }
@@ -93,9 +99,15 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
     
     <script>
+        // ==========================================
+        // GESTIONE CONNESSIONE (OFFLINE DETECTOR)
+        // ==========================================
         function verificaConnessione() { const banner = document.getElementById('offline-banner'); if (navigator.onLine) { banner.classList.remove('active'); } else { banner.classList.add('active'); } }
         window.addEventListener('online', verificaConnessione); window.addEventListener('offline', verificaConnessione); verificaConnessione();
 
+        // ==========================================
+        // GESTIONE DATI UTENTE
+        // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         let locationName = urlParams.get('loc') || 'Sede';
@@ -107,11 +119,13 @@
         const widget = document.getElementById('widget-3cx');
         if(widget) { widget.setAttribute('visitor-name', datoCompleto); widget.setAttribute('default-user-name', datoCompleto); }
 
+        // ==========================================
+        // SINTETIZZATORE AUDIO (IL "DING")
+        // ==========================================
         function riproduciSuonoNotifica() {
             try { const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return; const ctx = new AudioContext(); function tono(freq, start, dur) { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start); gain.gain.setValueAtTime(0.5, start); gain.gain.exponentialRampToValueAtTime(0.01, start + dur); osc.start(start); osc.stop(start + dur); } tono(880, ctx.currentTime, 0.3); tono(1046.50, ctx.currentTime + 0.15, 0.4); } catch (e) {}
         }
 
-        // Mostra il QR Code a schermo
         function mostraQR(link) {
             if(!link.startsWith('http')) { link = 'https://' + link; }
             const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
@@ -131,9 +145,10 @@
             btn.disabled = true;
             btn.innerText = "🔄 Generazione in corso...";
 
+            // Collegamento al tuo URL ufficiale di Google Script inviato
             const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
             
-            // Crea un ponte sicuro dinamico per raggirare il blocco dell'iPad
+            // Crea un canale sicuro temporaneo per aggirare le restrizioni CORS del tablet
             const callbackName = 'meetCallback_' + Math.round(100000 * Math.random());
 
             window[callbackName] = function(data) {
@@ -144,17 +159,15 @@
                     alert("Errore da Google: " + (data.error || "Impossibile creare la stanza."));
                     btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
                 }
-                // Pulizia del ponte
                 delete window[callbackName];
                 document.getElementById(callbackName).remove();
             };
 
-            // Iniezione diretta (bypassa il firewall del browser)
             const script = document.createElement('script');
             script.id = callbackName;
             script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationName)}&callback=${callbackName}`;
             script.onerror = function() {
-                alert("Errore di rete. L'antivirus del tablet potrebbe aver bloccato la richiesta.");
+                alert("Errore di rete o restrizione di sicurezza sul tablet.");
                 btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
             };
             document.body.appendChild(script);
