@@ -152,7 +152,7 @@
                 btn.innerText = `⏳ Nuovo SOS tra ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
             }
 
-            aggiornaTesto(remainingMs); // Aggiorna subito senza aspettare 1 secondo
+            aggiornaTesto(remainingMs); 
 
             const interval = setInterval(() => {
                 remainingMs -= 1000;
@@ -174,12 +174,11 @@
                 if (timePassed < TEMPO_BLOCCO_MS) {
                     avviaTimerCooldown(TEMPO_BLOCCO_MS - timePassed);
                 } else {
-                    localStorage.removeItem('lastSOSRequest'); // Pulisce se il tempo è scaduto
+                    localStorage.removeItem('lastSOSRequest'); 
                 }
             }
         }
 
-        // Avvia il controllo della memoria appena si carica la pagina
         checkCooldown();
 
         // ==========================================
@@ -198,7 +197,6 @@
                 if (data.url) {
                     mostraQR(data.url);
                     
-                    // Attiviamo lo Scudo Anti-Spam in memoria profonda!
                     localStorage.setItem('lastSOSRequest', Date.now());
                     avviaTimerCooldown(TEMPO_BLOCCO_MS);
 
@@ -212,7 +210,8 @@
 
             const script = document.createElement('script');
             script.id = callbackName;
-            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationName)}&callback=${callbackName}`;
+            // 🛠️ RIGA MODIFICATA: Aggiunto "&user=" alla fine per spedire il nome dinamico a Google Script!
+            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationName)}&user=${encodeURIComponent(userName)}&callback=${callbackName}`;
             script.onerror = function() {
                 alert("Errore di rete o restrizione di sicurezza sul tablet.");
                 btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
