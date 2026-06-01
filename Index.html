@@ -94,6 +94,31 @@
 
         hr { border: 0; height: 1px; background: #e2e8f0; margin: 30px 0; }
         
+        /* Rilevatore Offline (Banner Nascosto) */
+        #offline-banner {
+            position: fixed;
+            top: -80px; /* Nascosto fuori dallo schermo in alto */
+            left: 0;
+            width: 100%;
+            background-color: #ef4444; /* Rosso allarme */
+            color: white;
+            text-align: center;
+            padding: 18px;
+            font-weight: 800;
+            font-size: 16px;
+            z-index: 9999;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+        }
+        
+        /* Classe per farlo scendere visibilmente */
+        #offline-banner.active {
+            top: 0; 
+        }
+
         /* Box radar (solo pallino) */
         .radar-box { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
         .radar-dot { width: 12px; height: 12px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
@@ -102,38 +127,20 @@
         /* Stile per il QR Code iper-visibile */
         #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.5s ease-out; }
         
-        .testo-scansione {
-            font-size: 24px;
-            color: #1e293b;
-            font-weight: 800;
-            margin-bottom: 20px;
-            line-height: 1.2;
-            text-transform: uppercase;
-        }
+        .testo-scansione { font-size: 24px; color: #1e293b; font-weight: 800; margin-bottom: 20px; line-height: 1.2; text-transform: uppercase; }
+        .testo-sottotitolo { display: block; font-size: 16px; color: #10b981; font-weight: 700; margin-top: 5px; }
 
-        .testo-sottotitolo {
-            display: block;
-            font-size: 16px;
-            color: #10b981;
-            font-weight: 700;
-            margin-top: 5px;
-        }
-
-        #qr-image { 
-            width: 200px; 
-            height: 200px; 
-            border-radius: 16px; 
-            border: 4px solid #10b981; 
-            padding: 8px; 
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); 
-            background: white;
-        }
+        #qr-image { width: 200px; height: 200px; border-radius: 16px; border: 4px solid #10b981; padding: 8px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); background: white; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) { .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; } }
     </style>
 </head>
 <body>
+
+    <div id="offline-banner">
+        ⚠️ Nessuna connessione Internet - Verifica il Wi-Fi del tablet
+    </div>
 
     <div class="layout-wrapper">
         <div class="container">
@@ -164,6 +171,27 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
     
     <script>
+        // ==========================================
+        // GESTIONE CONNESSIONE (OFFLINE DETECTOR)
+        // ==========================================
+        function verificaConnessione() {
+            const banner = document.getElementById('offline-banner');
+            if (navigator.onLine) {
+                // Online: Nascondi il banner
+                banner.classList.remove('active');
+            } else {
+                // Offline: Mostra il banner
+                banner.classList.add('active');
+            }
+        }
+
+        // Ascoltiamo i cambiamenti di rete del tablet
+        window.addEventListener('online', verificaConnessione);
+        window.addEventListener('offline', verificaConnessione);
+        
+        // Controllo immediato all'apertura della pagina
+        verificaConnessione();
+
         // ==========================================
         // GESTIONE DATI UTENTE
         // ==========================================
@@ -203,7 +231,6 @@
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(frequenza, inizio);
                     
-                    // Crea un bell'effetto di sfumatura
                     gain.gain.setValueAtTime(0.5, inizio);
                     gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
                     
@@ -212,10 +239,10 @@
                 }
 
                 const adesso = ctx.currentTime;
-                riproduciTono(880, adesso, 0.3);         // Primo tono 
-                riproduciTono(1046.50, adesso + 0.15, 0.4); // Secondo tono più alto
+                riproduciTono(880, adesso, 0.3);         
+                riproduciTono(1046.50, adesso + 0.15, 0.4); 
             } catch (e) {
-                console.log("Audio non supportato dal browser");
+                console.log("Audio non supportato");
             }
         }
 
@@ -226,16 +253,13 @@
             if(!link.startsWith('http://') && !link.startsWith('https://')) { link = 'https://' + link; }
             const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
             
-            // Imposta l'immagine e cambia la visualizzazione
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('radar-box').style.display = 'none';
             document.getElementById('qr-result').style.display = 'block';
             
-            // Suona la notifica
             riproduciSuonoNotifica();
         }
 
-        // Ascoltiamo il segnale del nostro Sniffer di Rete
         window.addEventListener('LinkIntercettato', function(e) {
             mostraQR(e.detail);
         });
