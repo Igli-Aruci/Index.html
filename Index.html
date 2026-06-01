@@ -126,6 +126,7 @@
             try { const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return; const ctx = new AudioContext(); function tono(freq, start, dur) { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start); gain.gain.setValueAtTime(0.5, start); gain.gain.exponentialRampToValueAtTime(0.01, start + dur); osc.start(start); osc.stop(start + dur); } tono(880, ctx.currentTime, 0.3); tono(1046.50, ctx.currentTime + 0.15, 0.4); } catch (e) {}
         }
 
+        // Mostra il QR Code a schermo
         function mostraQR(link) {
             if(!link.startsWith('http')) { link = 'https://' + link; }
             const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
@@ -145,7 +146,7 @@
             btn.disabled = true;
             btn.innerText = "🔄 Generazione in corso...";
 
-            // Collegamento al tuo URL ufficiale di Google Script inviato
+            // Collegamento al tuo URL ufficiale di Google Script
             const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
             
             // Crea un canale sicuro temporaneo per aggirare le restrizioni CORS del tablet
@@ -159,10 +160,12 @@
                     alert("Errore da Google: " + (data.error || "Impossibile creare la stanza."));
                     btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
                 }
+                // Pulizia del ponte
                 delete window[callbackName];
                 document.getElementById(callbackName).remove();
             };
 
+            // Iniezione diretta (bypassa il firewall del browser)
             const script = document.createElement('script');
             script.id = callbackName;
             script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationName)}&callback=${callbackName}`;
