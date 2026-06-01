@@ -162,13 +162,13 @@
             btn.disabled = true;
             btn.innerText = "🔄 Generazione in corso...";
 
-            // Inserito il tuo URL di Google Script convertito in modalità esecuzione (/exec)
-            const googleScriptUrl = "https://script.google.com/macros/s/AKfycbz7UUBwC1YFhYLmCq6P9DBJWFTlyUqsk6F41Xs4CZhX/exec";
+            // Inserito il tuo URL di Google Script ufficiale pubblico (/exec)
+            const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
             try {
                 const urlCompleto = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationName)}`;
                 
-                // Forziamo il browser a seguire il redirect sicuro di Google
+                // Forziamo il browser a seguire il redirect sicuro di Google Apps Script (Risolve il problema del blocco CORS)
                 const response = await fetch(urlCompleto, {
                     method: 'GET',
                     redirect: 'follow'
