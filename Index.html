@@ -13,20 +13,19 @@
                 window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
             }
 
-            // 1. Intercettiamo le WebSocket (Ora legge anche i pacchetti compressi/binari)
+            // 1. Intercettiamo le WebSocket
             const OrigWebSocket = window.WebSocket;
             window.WebSocket = function(url, protocols) {
                 const ws = new OrigWebSocket(url, protocols);
                 ws.addEventListener('message', async function(e) {
                     try {
                         let msg = "";
-                        // Decodifichiamo il pacchetto in base al suo formato
                         if (typeof e.data === 'string') {
                             msg = e.data;
                         } else if (e.data instanceof Blob) {
-                            msg = await e.data.text(); // Spacchetta il Blob
+                            msg = await e.data.text();
                         } else if (e.data instanceof ArrayBuffer) {
-                            msg = new TextDecoder().decode(e.data); // Decodifica il binario
+                            msg = new TextDecoder().decode(e.data);
                         } else {
                             msg = JSON.stringify(e.data);
                         }
@@ -38,7 +37,7 @@
                 return ws;
             };
 
-            // 2. Intercettiamo le chiamate Fetch (Storico al reload)
+            // 2. Intercettiamo le chiamate Fetch
             const origFetch = window.fetch;
             window.fetch = async function(...args) {
                 const response = await origFetch.apply(this, args);
@@ -52,7 +51,7 @@
                 return response;
             };
 
-            // 3. Intercettiamo le chiamate AJAX (Sistemi legacy)
+            // 3. Intercettiamo le chiamate AJAX
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function() {
                 this.addEventListener('load', function() {
@@ -64,7 +63,7 @@
                 origOpen.apply(this, arguments);
             };
 
-            // 4. Intercettiamo i Server-Sent Events (Alternativa live alle WebSocket)
+            // 4. Intercettiamo i Server-Sent Events
             if (window.EventSource) {
                 const OrigEventSource = window.EventSource;
                 window.EventSource = function(url, config) {
@@ -100,7 +99,7 @@
         .radar-dot { width: 12px; height: 12px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
 
-        /* Nuovo Stile per il QR Code iper-visibile */
+        /* Stile per il QR Code iper-visibile */
         #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.5s ease-out; }
         
         .testo-scansione {
@@ -188,6 +187,39 @@
         }
 
         // ==========================================
+        // SINTETIZZATORE AUDIO (IL "DING")
+        // ==========================================
+        function riproduciSuonoNotifica() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                function riproduciTono(frequenza, inizio, durata) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(frequenza, inizio);
+                    
+                    // Crea un bell'effetto di sfumatura
+                    gain.gain.setValueAtTime(0.5, inizio);
+                    gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
+                    
+                    osc.start(inizio);
+                    osc.stop(inizio + durata);
+                }
+
+                const adesso = ctx.currentTime;
+                riproduciTono(880, adesso, 0.3);         // Primo tono 
+                riproduciTono(1046.50, adesso + 0.15, 0.4); // Secondo tono più alto
+            } catch (e) {
+                console.log("Audio non supportato dal browser");
+            }
+        }
+
+        // ==========================================
         // GESTIONE DEL QR CODE AUTOMATICO
         // ==========================================
         function mostraQR(link) {
@@ -198,6 +230,9 @@
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('radar-box').style.display = 'none';
             document.getElementById('qr-result').style.display = 'block';
+            
+            // Suona la notifica
+            riproduciSuonoNotifica();
         }
 
         // Ascoltiamo il segnale del nostro Sniffer di Rete
