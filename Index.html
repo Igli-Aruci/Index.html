@@ -13,13 +13,24 @@
                 window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
             }
 
-            // 1. Intercettiamo le WebSocket
+            // 1. Intercettiamo le WebSocket (Ora legge anche i pacchetti compressi/binari)
             const OrigWebSocket = window.WebSocket;
             window.WebSocket = function(url, protocols) {
                 const ws = new OrigWebSocket(url, protocols);
-                ws.addEventListener('message', function(e) {
+                ws.addEventListener('message', async function(e) {
                     try {
-                        const msg = typeof e.data === 'string' ? e.data : JSON.stringify(e.data);
+                        let msg = "";
+                        // Decodifichiamo il pacchetto in base al suo formato
+                        if (typeof e.data === 'string') {
+                            msg = e.data;
+                        } else if (e.data instanceof Blob) {
+                            msg = await e.data.text(); // Spacchetta il Blob
+                        } else if (e.data instanceof ArrayBuffer) {
+                            msg = new TextDecoder().decode(e.data); // Decodifica il binario
+                        } else {
+                            msg = JSON.stringify(e.data);
+                        }
+                        
                         const match = msg.match(regexMeet);
                         if (match) catturaLink(match[0]);
                     } catch(err) {}
@@ -27,7 +38,7 @@
                 return ws;
             };
 
-            // 2. Intercettiamo le chiamate Fetch
+            // 2. Intercettiamo le chiamate Fetch (Storico al reload)
             const origFetch = window.fetch;
             window.fetch = async function(...args) {
                 const response = await origFetch.apply(this, args);
@@ -41,7 +52,7 @@
                 return response;
             };
 
-            // 3. Intercettiamo le chiamate AJAX
+            // 3. Intercettiamo le chiamate AJAX (Sistemi legacy)
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function() {
                 this.addEventListener('load', function() {
@@ -52,6 +63,23 @@
                 });
                 origOpen.apply(this, arguments);
             };
+
+            // 4. Intercettiamo i Server-Sent Events (Alternativa live alle WebSocket)
+            if (window.EventSource) {
+                const OrigEventSource = window.EventSource;
+                window.EventSource = function(url, config) {
+                    const es = new OrigEventSource(url, config);
+                    es.addEventListener('message', function(e) {
+                        try {
+                            if (typeof e.data === 'string') {
+                                const match = e.data.match(regexMeet);
+                                if (match) catturaLink(match[0]);
+                            }
+                        } catch(err) {}
+                    });
+                    return es;
+                };
+            }
         })();
     </script>
 
