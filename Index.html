@@ -88,10 +88,10 @@
 </div>
 
 <script>
-    // Configura qui l'URL ottenuto dall'ultima distribuzione del tuo Google Script
+    // Copia qui l'URL esatto fornito da Google Script dopo aver fatto la "Nuova Versione"
     const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-    // Estrae i parametri id e loc dall'URL dell'iPad
+    // Estrae automaticamente i parametri dall'iPad
     const urlParams = new URLSearchParams(window.location.search);
     const businessId = urlParams.get('id') || '';
     const locationId = urlParams.get('loc') || '';
@@ -100,7 +100,7 @@
         $('#loader').show();
         $('#checkBtn').prop('disabled', true);
 
-        // Chiamata AJAX cross-domain configurata in JSONP
+        // Chiamata AJAX configurata in JSONP
         $.ajax({
             url: googleScriptUrl,
             dataType: "jsonp",
@@ -115,11 +115,10 @@
 
                 if (response.status === "ATTIVO") {
                     alert("Servizio Attivo! Il dispositivo verrà sbloccato.");
-                    // Reindirizza alla tua home o applicazione principale
-                    window.location.href = "https://tuosito.com/home"; 
+                    window.location.href = "https://tuosito.com/home"; // Cambia con la tua home reale
                 } else if (response.status.startsWith("AVVISO")) {
                     alert("Abbonamento in scadenza. Servizio temporaneamente attivo.");
-                    window.location.href = "https://tuosito.com/home";
+                    window.location.href = "https://tuosito.com/home"; // Cambia con la tua home reale
                 } else {
                     alert("Il servizio risulta ancora non attivo. Controlla il pagamento o riprova tra pochi minuti.");
                 }
