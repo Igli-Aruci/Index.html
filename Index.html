@@ -33,9 +33,18 @@
         /* Reset e layout */
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%); }
         
-        /* 🔒 STATO INIZIALE: Il contenuto principale parte NASCONSTO */
+        /* 🔒 STATO INIZIALE: Il contenuto principale parte NASCOSTO */
         .layout-wrapper { display: none; align-items: center; justify-content: flex-start; min-height: 100vh; padding-left: 12%; box-sizing: border-box; }
         .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
+
+        /* 🏷️ STILE DEL LOGO AZIENDALE */
+        .brand-logo {
+            width: 100%;
+            max-width: 240px;  /* Dimensione ideale per il logo esteso con pay-off */
+            height: auto;
+            margin: 0 auto 20px auto;
+            display: block;
+        }
 
         h2 { color: #1e293b; margin-top: 0; margin-bottom: 10px; font-size: 26px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 20px; }
@@ -62,7 +71,7 @@
         .testo-sottotitolo { display: block; font-size: 15px; color: #10b981; font-weight: 700; margin-top: 5px; }
         #qr-image { width: 200px; height: 200px; border-radius: 16px; border: 4px solid #10b981; padding: 8px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); background: white; }
 
-        /* ⏳ NUOVO: Schermata iniziale di caricamento (Loader) */
+        /* ⏳ Schermata iniziale di caricamento (Loader) */
         #loading-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -150,8 +159,8 @@
 
     <div id="stripe-overlay">
         <div class="premium-box">
-            <span style="font-size: 55px; display: block; margin-bottom: 15px;">🔒</span>
-            <h2 style="color: #0f172a; font-size: 24px; margin-bottom: 12px;">Servizio Premium Non Attivo</h2>
+            <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo NO RIVAL" class="brand-logo" style="max-width: 200px;">
+            <h2 style="color: #0f172a; font-size: 24px; margin-bottom: 12px; margin-top: 10px;">Servizio Premium Non Attivo</h2>
             <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 20px; padding: 0 10px;">
                 Per utilizzare la funzione di <strong>Blocco Servizio SOS</strong> e ricevere videoassistenza immediata in cassa, attiva il piano Premium Annuale.
             </p>
@@ -167,7 +176,9 @@
 
     <div id="main-content" class="layout-wrapper">
         <div class="container">
-            <h2>Assistenza NO RIVAL</h2>
+            <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo NO RIVAL" class="brand-logo">
+            
+            <h2>Assistenza</h2>
             <div class="benvenuto">Benvenuto <span id="display-user"></span></div>
             
             <div class="istruzioni">
@@ -229,13 +240,12 @@
             const widget3cx = document.getElementById('widget-3cx');
             const loadingScreen = document.getElementById('loading-screen');
             
-            // Rimuove la schermata di caricamento grigia
             if (loadingScreen) { loadingScreen.style.display = 'none'; }
             
             if (bloccata) {
                 document.body.classList.add('licenza-bloccata');
                 overlay.style.display = 'flex';
-                mainContent.style.display = 'none'; // Nasconde l'interfaccia standard
+                mainContent.style.display = 'none'; 
                 if (widget3cx) { widget3cx.style.display = 'none'; }
                 
                 const tcxElements = document.querySelectorAll('.tcx-callus-button, div[id^="tcx-"], [id*="3cx"]');
@@ -243,7 +253,7 @@
             } else {
                 document.body.classList.remove('licenza-bloccata');
                 overlay.style.display = 'none';
-                mainContent.style.display = 'flex'; // Sblocca e mostra l'interfaccia reale solo ora!
+                mainContent.style.display = 'flex'; 
                 if (widget3cx) { widget3cx.style.display = 'block'; }
             }
         }
