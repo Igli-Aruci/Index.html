@@ -60,20 +60,19 @@
     </div>
 
     <script>
-        // URL FISSO DELLA TUA WEB APP GOOGLE SCRIPT
+        // URL della tua applicazione Web di Google Script
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        // Estrazione parametri dall'URL dell'iPad
+        // Cattura i dati che arrivano da Lightspeed tramite l'URL dell'iPad
         const urlParams = new URLSearchParams(window.location.search);
-        const businessId = urlParams.get('id') || '';
-        const locationId = urlParams.get('loc') || '';
-        const locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'Sede';
-        const userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
+        const businessId = (urlParams.get('id') || '').trim();
+        const locationId = (urlParams.get('loc') || '').trim();
+        const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
+        const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
 
-        // Aggiorna il nome dell'utente nella schermata SOS
         document.getElementById('display-user').innerText = userName;
 
-        // Funzione universale per eseguire chiamate bypassando i blocchi CORS dell'iPad (Script Injection)
+        // Funzione per aggirare i blocchi CORS dell'iPad (Metodo JSONP nativo via Script Injection)
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
             const callbackName = 'handler_' + Math.round(100000 * Math.random());
             
@@ -97,7 +96,7 @@
             document.body.appendChild(script);
         }
 
-        // 1. Azione di Controllo Licenza Iniziale
+        // Verifica Licenza
         function verificaLicenza() {
             document.getElementById('btn-check').disabled = true;
             document.getElementById('loader-lock').style.display = 'block';
@@ -109,22 +108,21 @@
                     document.getElementById('loader-lock').style.display = 'none';
 
                     if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
-                        // SBLOCCO INTERFACCIA: Nasconde il blocco e mostra la schermata SOS
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                     } else {
-                        alert("❌ Verifica fallita: Il servizio risulta scaduto o non abbinato a questo terminale.");
+                        alert("❌ Verifica fallita: I codici passati da Lightspeed (ID: " + businessId + ") non corrispondono a una licenza attiva sul foglio Google.");
                     }
                 },
                 function() {
                     document.getElementById('btn-check').disabled = false;
                     document.getElementById('loader-lock').style.display = 'none';
-                    alert("⚠️ Errore di connessione con il server Google.");
+                    alert("⚠️ Errore di comunicazione con il server Google.");
                 }
             );
         }
 
-        // 2. Azione di Generazione Stanza SOS (Meet + Telegram)
+        // Richiesta SOS Videoassistenza
         function richiediSos() {
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
@@ -135,7 +133,7 @@
                     document.getElementById('loader-sos').style.display = 'none';
 
                     if (data.status === 'SCADUTO') {
-                        alert("⚠️ Sessione scaduta. Verrai riportato al blocco licenza.");
+                        alert("⚠️ Sessione scaduta.");
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
                         document.getElementById('btn-sos').disabled = false;
@@ -143,13 +141,12 @@
                     }
 
                     if (data.url) {
-                        // Mostra il QR Code generato
                         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.url)}`;
                         document.getElementById('qr-image').src = qrUrl;
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 RICHIESTA INVIATA";
                     } else {
-                        alert("Errore da Google: Impossibile creare la stanza video.");
+                        alert("Errore da Google Meet.");
                         document.getElementById('btn-sos').disabled = false;
                     }
                 },
@@ -161,7 +158,7 @@
             );
         }
 
-        // Avvia il controllo automatico non appena l'iPad apre la pagina
+        // Avvia il controllo automatico alla lettura dei parametri da Lightspeed
         window.onload = function() {
             if(businessId !== '') {
                 verificaLicenza();
