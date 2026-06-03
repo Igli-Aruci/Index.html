@@ -70,7 +70,6 @@
         .stripe-btn { display: block; background: #635bff; color: white; padding: 16px; font-size: 17px; font-weight: 800; border-radius: 12px; text-decoration: none; margin-top: 25px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(99, 91, 255, 0.3); transition: 0.2s; }
         .stripe-btn:active { transform: translateY(2px); box-shadow: none; }
         
-        /* 🔄 Stile del nuovo tasto Verifica Rapida */
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; text-decoration: none; margin-top: 15px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
         .verify-btn:active { background: #e2e8f0; }
 
@@ -94,7 +93,7 @@
     </div>
 
     <div id="expiry-warning-banner">
-        <span>⚠️ Il servizio Premium scadrà tra <span id="expiry-days">X</span> giorni. Rinnova ora per evitare blocchi.</span>
+        <span>⚠️ Il servizio Premium scadrà il <span id="expiry-exact-date">--/--/----</span> (tra <span id="expiry-days">X</span> giorni). Rinnova ora.</span>
         <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="renew-mini-btn">Rinnova ora</a>
     </div>
 
@@ -162,7 +161,6 @@
         let locationId = urlParams.get('loc') || ''; 
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // 🧹 Sanificazione avanzata dei dati dell'utente per evitare crash e problemi con Telegram/Markdown
         locationName = locationName.replace(/[*_#@!$%&()\[\]]/g, '').trim(); 
         userName = userName.replace(/[*_#@!$%&()\[\]]/g, '').trim();
         document.getElementById('display-user').innerText = userName;
@@ -193,8 +191,13 @@
                 tcxElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
                 
             } else if (statoRisposta && statoRisposta.startsWith('AVVISO')) {
-                const giorni = statoRisposta.split(':')[1];
+                // Estrae i parametri dell'avviso (Stato:Giorni:DataIta)
+                const parti = statoRisposta.split(':');
+                const giorni = parti[1];
+                const dataIta = parti[2];
+                
                 document.getElementById('expiry-days').innerText = giorni;
+                document.getElementById('expiry-exact-date').innerText = dataIta;
                 
                 document.body.classList.remove('licenza-bloccata');
                 overlay.style.display = 'none';
@@ -227,7 +230,6 @@
             document.body.appendChild(script);
         }
 
-        // 🔄 FUNZIONE DI CONTROLLO IMMEDIATO DOPO IL PAGAMENTO STRIPE
         function forzaRicontrolloPagamento() {
             const loadingScreen = document.getElementById('loading-screen');
             const loadingText = document.getElementById('loading-text');
