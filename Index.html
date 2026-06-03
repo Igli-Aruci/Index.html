@@ -164,10 +164,7 @@
 
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        let chiamataCompletata = false;
-
         function impostaStatoInterfaccia(statoRisposta) {
-            chiamataCompletata = true; // Segnala che la risposta è arrivata
             const overlay = document.getElementById('stripe-overlay');
             const mainContent = document.getElementById('main-content');
             const widget3cx = document.getElementById('widget-3cx');
@@ -214,14 +211,6 @@
                 delete window[callbackName];
                 document.getElementById(callbackName).remove();
             };
-            
-            // 🛡️ SECURITY TIMEOUT (Failsafe Pro): Se il server non risponde entro 5 secondi, sblocca forzatamente
-            setTimeout(function() {
-                if (!chiamataCompletata) {
-                    console.log("Failsafe attivato: server lento, sblocco d'emergenza.");
-                    impostaStatoInterfaccia('ATTIVO');
-                }
-            }, 5000);
 
             const script = document.createElement('script');
             script.id = callbackName;
