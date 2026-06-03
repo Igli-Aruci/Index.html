@@ -3,315 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supporto POS</title>
-    
-    <script>
-        (function() {
-            const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
-            function catturaLink(link) { window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link })); }
-            
-            const OrigWebSocket = window.WebSocket;
-            window.WebSocket = function(url, protocols) {
-                const ws = new OrigWebSocket(url, protocols);
-                ws.addEventListener('message', async function(e) {
-                    try {
-                        let msg = typeof e.data === 'string' ? e.data : (e.data instanceof Blob ? await e.data.text() : (e.data instanceof ArrayBuffer ? new TextDecoder().decode(e.data) : JSON.stringify(e.data)));
-                        const match = msg.match(regexMeet); if (match) catturaLink(match[0]);
-                    } catch(err) {}
-                }); return ws;
-            };
-            
-            const origFetch = window.fetch;
-            window.fetch = async function(...args) {
-                const response = await origFetch.apply(this, args);
-                try { const clone = response.clone(); clone.text().then(text => { const match = text.match(regexMeet); if (match) catturaLink(match[0]); }); } catch(e){} return response;
-            };
-        })();
-    </script>
-
+    <title>Verifica Servizio Premium</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; background-image: radial-gradient(circle at center, #ffffff 0%, #f4f6f9 100%); }
-        
-        .layout-wrapper { display: none; align-items: center; justify-content: flex-start; min-height: 100vh; padding-left: 12%; box-sizing: border-box; }
-        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; position: relative; }
-
-        .brand-logo { width: 100%; max-width: 240px; height: auto; margin: 0 auto 20px auto; display: block; }
-
-        h2 { color: #1e293b; margin-top: 0; margin-bottom: 10px; font-size: 26px; font-weight: 700; }
-        .benvenuto { color: #3b82f6; font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 20px; }
-        .istruzioni { color: #64748b; font-size: 16px; line-height: 1.5; margin-bottom: 20px; }
-        hr { border: 0; height: 1px; background: #e2e8f0; margin: 25px 0; }
-        
-        #expiry-warning-banner { display: none; position: fixed; top: 0; left: 0; width: 100%; background-color: #fef08a; border-bottom: 2px solid #eab308; color: #854d0e; text-align: center; padding: 12px 20px; font-weight: 700; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.15); box-sizing: border-box; align-items: center; justify-content: center; gap: 15px; }
-        .renew-mini-btn { background: #eab308; color: #ffffff; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 12px; text-transform: uppercase; font-weight: 800; box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3); }
-
-        /* 🛡️ LIVELLO MASSIMO DI PRIORITÀ: z-index a 1000000 per stare sopra al popup di Stripe */
-        #offline-banner { position: fixed; top: -80px; left: 0; width: 100%; background-color: #ef4444; color: white; text-align: center; padding: 18px; font-weight: 800; font-size: 16px; z-index: 1000000; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: top 0.4s; text-transform: uppercase; box-sizing: border-box; }
-        #offline-banner.active { top: 0; }
-        
-        .radar-box { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
-        .radar-dot { width: 12px; height: 12px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
-
-        .sos-btn { width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); text-transform: uppercase; letter-spacing: 0.5px; }
-        .sos-btn:active { transform: translateY(2px); box-shadow: none; }
-        .sos-btn:disabled { background: #cbd5e1; color: #475569; box-shadow: none; cursor: not-allowed; }
-
-        #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.5s ease-out; }
-        .testo-scansione { font-size: 22px; color: #1e293b; font-weight: 800; margin-bottom: 20px; line-height: 1.2; text-transform: uppercase; }
-        .testo-sottotitolo { display: block; font-size: 15px; color: #10b981; font-weight: 700; margin-top: 5px; }
-        #qr-image { width: 200px; height: 200px; border-radius: 16px; border: 4px solid #10b981; padding: 8px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); background: white; }
-
-        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f6f9; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 999999; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #cbd5e1; border-top: 5px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        #stripe-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 246, 249, 0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 99999; align-items: center; justify-content: center; box-sizing: border-box; }
-        .premium-box { background: white; border-radius: 24px; padding: 45px 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.12); width: 90%; max-width: 460px; text-align: center; border: 1px solid #e2e8f0; }
-        .stripe-btn { display: block; background: #635bff; color: white; padding: 16px; font-size: 17px; font-weight: 800; border-radius: 12px; text-decoration: none; margin-top: 25px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(99, 91, 255, 0.3); transition: 0.2s; }
-        .stripe-btn:active { transform: translateY(2px); box-shadow: none; }
-        
-        .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; text-decoration: none; margin-top: 15px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
-        .verify-btn:active { background: #e2e8f0; }
-
-        body.licenza-bloccata call-us-selector,
-        body.licenza-bloccata #tcx-callus-js,
-        body.licenza-bloccata .tcx-callus-button,
-        body.licenza-bloccata div[id^="tcx-"],
-        body.licenza-bloccata [id*="3cx"] {
-            display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 900px) { .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; } }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #1d1d1f;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #86868b;
+            font-size: 16px;
+            line-height: 1.4;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: block;
+            background: #0071e3;
+            color: white;
+            text-decoration: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border: none;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-secondary {
+            background: #e8e8ed;
+            color: #0071e3;
+        }
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0071e3;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
 
-    <div id="offline-banner">⚠️ Nessuna connessione Internet - Verifica il Wi-Fi</div>
-
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <div id="loading-text" style="color: #64748b; font-weight: 600; font-size: 16px;">Verifica licenza in corso...</div>
-    </div>
-
-    <div id="expiry-warning-banner">
-        <span>⚠️ Il servizio Premium scadrà il <span id="expiry-exact-date">--/--/----</span> (tra <span id="expiry-days">X</span> giorni). Rinnova ora.</span>
-        <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="renew-mini-btn">Rinnova ora</a>
-    </div>
-
-    <div id="stripe-overlay">
-        <div class="premium-box">
-            <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo NO RIVAL" class="brand-logo" style="max-width: 200px;">
-            <h2 style="color: #0f172a; font-size: 24px; margin-bottom: 12px; margin-top: 10px;">Servizio Premium Non Attivo</h2>
-            <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 20px; padding: 0 10px;">
-                Per utilizzare la funzione di <strong>Blocco Servizio SOS</strong> e ricevere videoassistenza immediata in cassa, attiva il piano Premium Annuale.
-            </p>
-            <div style="background: #f8fafc; border-radius: 12px; padding: 15px; margin: 15px 0;">
-                <span style="font-size: 28px; font-weight: 800; color: #1e293b;">€350</span>
-                <span style="font-size: 14px; color: #64748b; font-weight: 600;"> / anno + IVA</span>
-            </div>
-            <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="stripe-btn">
-                💳 Sblocca Servizio
-            </a>
-            <button onclick="forzaRicontrolloPagamento()" class="verify-btn">
-                🔄 Ho già pagato, verifica
-            </button>
-        </div>
-    </div>
-
-    <div id="main-content" class="layout-wrapper">
-        <div class="container">
-            <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo NO RIVAL" class="brand-logo">
-            
-            <h2>Assistenza</h2>
-            <div class="benvenuto">Benvenuto <span id="display-user"></span></div>
-            
-            <div class="istruzioni">
-                Siamo a tua disposizione.<br>Clicca sul pallino in basso a destra per avviare la chat.
-            </div>
-
-            <button id="btn-sos" onclick="creaChiamataMeetImmediata()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
-
-            <hr>
-
-            <div id="radar-box" class="radar-box">
-                <div class="radar-dot"></div>
-            </div>
-            
-            <div id="qr-result">
-                <div class="testo-scansione">
-                    📱 SCANSIONA IL CODICE
-                    <span class="testo-sottotitolo">per entrare nella videochiamata</span>
-                </div>
-                <img id="qr-image" src="" alt="QR Code">
-            </div>
-
-        </div>
-    </div>
-
-    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
+<div class="card">
+    <div class="icon">⚠️</div>
+    <h1>Servizio Premium non attivo</h1>
+    <p>Il servizio di abbonamento per questo dispositivo risulta scaduto o non ancora attivato. Rinnova per sbloccare le funzionalità.</p>
     
-    <script>
-        function verificaConnessione() { const banner = document.getElementById('offline-banner'); if (navigator.onLine) { banner.classList.remove('active'); } else { banner.classList.add('active'); } }
-        window.addEventListener('online', verificaConnessione); window.addEventListener('offline', verificaConnessione); verificaConnessione();
+    <a href="https://buy.stripe.com/tuo_link_stripe" class="btn">Attiva Servizio Premium</a>
+    
+    <button id="checkBtn" class="btn btn-secondary">🔄 Ho già pagato, verifica</button>
+    
+    <div id="loader" class="loader"></div>
+</div>
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const businessId = urlParams.get('id') || '12345';
-        let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'Sede';
-        let locationId = urlParams.get('loc') || ''; 
-        let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
-        
-        locationName = locationName.replace(/[*_#@!$%&()\[\]]/g, '').trim(); 
-        userName = userName.replace(/[*_#@!$%&()\[\]]/g, '').trim();
-        document.getElementById('display-user').innerText = userName;
+<script>
+    // Configura qui l'URL ottenuto dall'ultima distribuzione del tuo Google Script
+    const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        const datoCompleto = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
-        const widget = document.getElementById('widget-3cx');
-        if(widget) { widget.setAttribute('visitor-name', datoCompleto); widget.setAttribute('default-user-name', datoCompleto); }
+    // Estrae i parametri id e loc dall'URL dell'iPad
+    const urlParams = new URLSearchParams(window.location.search);
+    const businessId = urlParams.get('id') || '';
+    const locationId = urlParams.get('loc') || '';
 
-        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+    $('#checkBtn').on('click', function() {
+        $('#loader').show();
+        $('#checkBtn').prop('disabled', true);
 
-        function impostaStatoInterfaccia(statoRisposta) {
-            const overlay = document.getElementById('stripe-overlay');
-            const mainContent = document.getElementById('main-content');
-            const widget3cx = document.getElementById('widget-3cx');
-            const loadingScreen = document.getElementById('loading-screen');
-            const warningBanner = document.getElementById('expiry-warning-banner');
-            
-            if (loadingScreen) { loadingScreen.style.display = 'none'; }
-            
-            if (statoRisposta === 'SCADUTO') {
-                document.body.classList.add('licenza-bloccata');
-                overlay.style.display = 'flex';
-                mainContent.style.display = 'none'; 
-                warningBanner.style.display = 'none';
-                if (widget3cx) { widget3cx.style.display = 'none'; }
-                
-                const tcxElements = document.querySelectorAll('.tcx-callus-button, div[id^="tcx-"], [id*="3cx"]');
-                tcxElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
-                
-            } else if (statoRisposta && statoRisposta.startsWith('AVVISO')) {
-                const parti = statoRisposta.split(':');
-                const giorni = parti[1];
-                const dataIta = parti[2];
-                
-                document.getElementById('expiry-days').innerText = giorni;
-                document.getElementById('expiry-exact-date').innerText = dataIta;
-                
-                document.body.classList.remove('licenza-bloccata');
-                overlay.style.display = 'none';
-                mainContent.style.display = 'flex';
-                mainContent.style.paddingTop = '60px'; 
-                warningBanner.style.display = 'flex';
-                if (widget3cx) { widget3cx.style.display = 'block'; }
-                
-            } else {
-                document.body.classList.remove('licenza-bloccata');
-                overlay.style.display = 'none';
-                mainContent.style.display = 'flex';
-                mainContent.style.paddingTop = '0px';
-                warningBanner.style.display = 'none';
-                if (widget3cx) { widget3cx.style.display = 'block'; }
-            }
-        }
+        // Chiamata AJAX cross-domain configurata in JSONP
+        $.ajax({
+            url: googleScriptUrl,
+            dataType: "jsonp",
+            data: {
+                id: businessId,
+                loc: locationId,
+                action: "check"
+            },
+            success: function(response) {
+                $('#loader').hide();
+                $('#checkBtn').prop('disabled', false);
 
-        function verificaAbbonamentoIniziale() {
-            const callbackName = 'checkLicense_' + Math.round(100000 * Math.random());
-            window[callbackName] = function(data) {
-                impostaStatoInterfaccia(data.status);
-                delete window[callbackName];
-                document.getElementById(callbackName).remove();
-            };
-
-            const script = document.createElement('script');
-            script.id = callbackName;
-            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&action=check&callback=${callbackName}`;
-            document.body.appendChild(script);
-        }
-
-        function forzaRicontrolloPagamento() {
-            const loadingScreen = document.getElementById('loading-screen');
-            const loadingText = document.getElementById('loading-text');
-            if (loadingScreen) {
-                loadingText.innerText = "Controllo pagamento in corso...";
-                loadingScreen.style.display = 'flex';
-            }
-            verificaAbbonamentoIniziale();
-        }
-
-        window.onload = function() {
-            verificaAbbonamentoIniziale();
-            checkCooldown();
-        };
-
-        function riproduciSuonoNotifica() {
-            try { const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return; const ctx = new AudioContext(); function tono(freq, start, dur) { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start); gain.gain.setValueAtTime(0.5, start); gain.gain.exponentialRampToValueAtTime(0.01, start + dur); osc.start(start); osc.stop(start + dur); } tono(880, ctx.currentTime, 0.3); tono(1046.50, ctx.currentTime + 0.15, 0.4); } catch (e) {}
-        }
-
-        function mostraQR(link) {
-            if(!link.startsWith('http')) { link = 'https://' + link; }
-            const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(link);
-            document.getElementById('qr-image').src = qrUrl; 
-            document.getElementById('radar-box').style.display = 'none'; 
-            document.getElementById('qr-result').style.display = 'block'; 
-            riproduciSuonoNotifica();
-        }
-
-        window.addEventListener('LinkIntercettato', function(e) { mostraQR(e.detail); });
-
-        const TEMPO_BLOCCO_MS = 3 * 60 * 1000; 
-
-        function avviaTimerCooldown(remainingMs) {
-            const btn = document.getElementById('btn-sos');
-            btn.disabled = true;
-            function aggiornaTesto(ms) {
-                const minutes = Math.floor(ms / 60000); const seconds = Math.floor((ms % 60000) / 1000);
-                btn.innerText = `⏳ Nuovo SOS tra ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            }
-            aggiornaTesto(remainingMs); 
-            const interval = setInterval(() => {
-                remainingMs -= 1000;
-                if (remainingMs <= 0) {
-                    clearInterval(interval); btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza"; localStorage.removeItem('lastSOSRequest');
-                } else { aggiornaTesto(remainingMs); }
-            }, 1000);
-        }
-
-        function checkCooldown() {
-            const lastReq = localStorage.getItem('lastSOSRequest');
-            if (lastReq) {
-                const timePassed = Date.now() - parseInt(lastReq);
-                if (timePassed < TEMPO_BLOCCO_MS) { avviaTimerCooldown(TEMPO_BLOCCO_MS - timePassed); } else { localStorage.removeItem('lastSOSRequest'); }
-            }
-        }
-
-        function creaChiamataMeetImmediata() {
-            const btn = document.getElementById('btn-sos');
-            btn.disabled = true; btn.innerText = "🔄 Generazione in corso...";
-            const callbackName = 'meetCallback_' + Math.round(100000 * Math.random());
-
-            window[callbackName] = function(data) {
-                if (data.status === 'SCADUTO') {
-                    impostaStatoInterfaccia(data.status);
-                    btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
-                    return;
-                }
-                if (data.url) {
-                    mostraQR(data.url); localStorage.setItem('lastSOSRequest', Date.now()); avviaTimerCooldown(TEMPO_BLOCCO_MS);
+                if (response.status === "ATTIVO") {
+                    alert("Servizio Attivo! Il dispositivo verrà sbloccato.");
+                    // Reindirizza alla tua home o applicazione principale
+                    window.location.href = "https://tuosito.com/home"; 
+                } else if (response.status.startsWith("AVVISO")) {
+                    alert("Abbonamento in scadenza. Servizio temporaneamente attivo.");
+                    window.location.href = "https://tuosito.com/home";
                 } else {
-                    alert("Errore da Google: " + (data.error || "Impossibile creare la stanza.")); btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
+                    alert("Il servizio risulta ancora non attivo. Controlla il pagamento o riprova tra pochi minuti.");
                 }
-                delete window[callbackName]; document.getElementById(callbackName).remove();
-            };
+            },
+            error: function() {
+                $('#loader').hide();
+                $('#checkBtn').prop('disabled', false);
+                alert("Errore di connessione durante la verifica. Riprova.");
+            }
+        });
+    });
+</script>
 
-            const script = document.createElement('script');
-            script.id = callbackName;
-            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&loc_name=${encodeURIComponent(locationName)}&user=${encodeURIComponent(userName)}&action=sos&callback=${callbackName}`;
-            document.body.appendChild(script);
-        }
-    </script>
-
-    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
 </html>
