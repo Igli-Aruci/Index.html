@@ -21,11 +21,11 @@
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
         .sos-btn:disabled { background: #cbd5e1; color: #475569; box-shadow: none; cursor: not-allowed; }
 
-        /* Loader */
+        /* Loader Spinner */
         .spinner { display: none; width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Risultato QR */
+        /* Area QR Code */
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
@@ -60,19 +60,20 @@
     </div>
 
     <script>
-        // URL della tua applicazione Web di Google Script
+        // URL ESEGUIBILE DELLA TUA WEB APP GOOGLE APPS SCRIPT
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        // Cattura i dati che arrivano da Lightspeed tramite l'URL dell'iPad
+        // Estrazione nativa e pulizia dei parametri URL passati da Lightspeed all'iPad
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '').trim();
         const locationId = (urlParams.get('loc') || '').trim();
         const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
         const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
 
+        // Stampa il nome dell'operatore rilevato dal POS
         document.getElementById('display-user').innerText = userName;
 
-        // Funzione per aggirare i blocchi CORS dell'iPad (Metodo JSONP nativo via Script Injection)
+        // Sistema di iniezione script volante (JSONP) per bypassare le protezioni CORS dell'iPad
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
             const callbackName = 'handler_' + Math.round(100000 * Math.random());
             
@@ -96,8 +97,12 @@
             document.body.appendChild(script);
         }
 
-        // Verifica Licenza
+        // 1. Azione del pulsante di Controllo Licenza
         function verificaLicenza() {
+            if (!businessId) {
+                alert("Nessun parametro ID valido rilevato da Lightspeed nell'URL.");
+                return;
+            }
             document.getElementById('btn-check').disabled = true;
             document.getElementById('loader-lock').style.display = 'block';
 
@@ -108,21 +113,22 @@
                     document.getElementById('loader-lock').style.display = 'none';
 
                     if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
+                        // SBLOCCO: Nasconde la schermata di pagamento e attiva i comandi SOS
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                     } else {
-                        alert("❌ Verifica fallita: I codici passati da Lightspeed (ID: " + businessId + ") non corrispondono a una licenza attiva sul foglio Google.");
+                        alert("❌ Verifica fallita: L'ID Business " + businessId + " non è registrato o risulta scaduto.");
                     }
                 },
                 function() {
                     document.getElementById('btn-check').disabled = false;
                     document.getElementById('loader-lock').style.display = 'none';
-                    alert("⚠️ Errore di comunicazione con il server Google.");
+                    alert("⚠️ Impossibile raggiungere i server Google Sheets.");
                 }
             );
         }
 
-        // Richiesta SOS Videoassistenza
+        // 2. Azione del pulsante SOS (Creazione Stanza Meet + Notifica Telegram)
         function richiediSos() {
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
@@ -133,7 +139,7 @@
                     document.getElementById('loader-sos').style.display = 'none';
 
                     if (data.status === 'SCADUTO') {
-                        alert("⚠️ Sessione scaduta.");
+                        alert("⚠️ Sessione scaduta. Ritorno alla schermata di blocco.");
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
                         document.getElementById('btn-sos').disabled = false;
@@ -141,24 +147,25 @@
                     }
 
                     if (data.url) {
+                        // Creazione del QR code dinamico per accedere alla videochiamata Meet dall'iPad o smartphone
                         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.url)}`;
                         document.getElementById('qr-image').src = qrUrl;
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 RICHIESTA INVIATA";
                     } else {
-                        alert("Errore da Google Meet.");
+                        alert("Errore nella generazione della stanza Google Meet.");
                         document.getElementById('btn-sos').disabled = false;
                     }
                 },
                 function() {
                     document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
-                    alert("⚠️ Errore durante l'invio della richiesta SOS.");
+                    alert("⚠️ Errore di rete durante la richiesta SOS.");
                 }
             );
         }
 
-        // Avvia il controllo automatico alla lettura dei parametri da Lightspeed
+        // Esegue il controllo automatico silenzioso non appena Lightspeed apre l'interfaccia
         window.onload = function() {
             if(businessId !== '') {
                 verificaLicenza();
