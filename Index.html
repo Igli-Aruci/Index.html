@@ -45,7 +45,8 @@
         #expiry-warning-banner { display: none; position: fixed; top: 0; left: 0; width: 100%; background-color: #fef08a; border-bottom: 2px solid #eab308; color: #854d0e; text-align: center; padding: 12px 20px; font-weight: 700; font-size: 14px; z-index: 9999; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.15); box-sizing: border-box; align-items: center; justify-content: center; gap: 15px; }
         .renew-mini-btn { background: #eab308; color: #ffffff; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 12px; text-transform: uppercase; font-weight: 800; box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3); }
 
-        #offline-banner { position: fixed; top: -80px; left: 0; width: 100%; background-color: #ef4444; color: white; text-align: center; padding: 18px; font-weight: 800; font-size: 16px; z-index: 10000; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: top 0.4s; text-transform: uppercase; box-sizing: border-box; }
+        /* 🛡️ LIVELLO MASSIMO DI PRIORITÀ: z-index a 1000000 per stare sopra al popup di Stripe */
+        #offline-banner { position: fixed; top: -80px; left: 0; width: 100%; background-color: #ef4444; color: white; text-align: center; padding: 18px; font-weight: 800; font-size: 16px; z-index: 1000000; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: top 0.4s; text-transform: uppercase; box-sizing: border-box; }
         #offline-banner.active { top: 0; }
         
         .radar-box { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
@@ -87,6 +88,8 @@
 </head>
 <body>
 
+    <div id="offline-banner">⚠️ Nessuna connessione Internet - Verifica il Wi-Fi</div>
+
     <div id="loading-screen">
         <div class="spinner"></div>
         <div id="loading-text" style="color: #64748b; font-weight: 600; font-size: 16px;">Verifica licenza in corso...</div>
@@ -96,8 +99,6 @@
         <span>⚠️ Il servizio Premium scadrà il <span id="expiry-exact-date">--/--/----</span> (tra <span id="expiry-days">X</span> giorni). Rinnova ora.</span>
         <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="renew-mini-btn">Rinnova ora</a>
     </div>
-
-    <div id="offline-banner">⚠️ Nessuna connessione Internet - Verifica il Wi-Fi</div>
 
     <div id="stripe-overlay">
         <div class="premium-box">
@@ -191,7 +192,6 @@
                 tcxElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
                 
             } else if (statoRisposta && statoRisposta.startsWith('AVVISO')) {
-                // Estrae i parametri dell'avviso (Stato:Giorni:DataIta)
                 const parti = statoRisposta.split(':');
                 const giorni = parti[1];
                 const dataIta = parti[2];
