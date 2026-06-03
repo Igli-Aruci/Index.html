@@ -69,6 +69,10 @@
         .premium-box { background: white; border-radius: 24px; padding: 45px 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.12); width: 90%; max-width: 460px; text-align: center; border: 1px solid #e2e8f0; }
         .stripe-btn { display: block; background: #635bff; color: white; padding: 16px; font-size: 17px; font-weight: 800; border-radius: 12px; text-decoration: none; margin-top: 25px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(99, 91, 255, 0.3); transition: 0.2s; }
         .stripe-btn:active { transform: translateY(2px); box-shadow: none; }
+        
+        /* 🔄 Stile del nuovo tasto Verifica Rapida */
+        .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; text-decoration: none; margin-top: 15px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        .verify-btn:active { background: #e2e8f0; }
 
         body.licenza-bloccata call-us-selector,
         body.licenza-bloccata #tcx-callus-js,
@@ -86,7 +90,7 @@
 
     <div id="loading-screen">
         <div class="spinner"></div>
-        <div style="color: #64748b; font-weight: 600; font-size: 16px;">Verifica licenza in corso...</div>
+        <div id="loading-text" style="color: #64748b; font-weight: 600; font-size: 16px;">Verifica licenza in corso...</div>
     </div>
 
     <div id="expiry-warning-banner">
@@ -110,6 +114,9 @@
             <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="stripe-btn">
                 💳 Sblocca Servizio
             </a>
+            <button onclick="forzaRicontrolloPagamento()" class="verify-btn">
+                🔄 Ho già pagato, verifica
+            </button>
         </div>
     </div>
 
@@ -155,7 +162,9 @@
         let locationId = urlParams.get('loc') || ''; 
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        locationName = locationName.replace(/[*#@!$%&]/g, '').trim(); userName = userName.replace(/[*#@!$%&]/g, '').trim();
+        // 🧹 Sanificazione avanzata dei dati dell'utente per evitare crash e problemi con Telegram/Markdown
+        locationName = locationName.replace(/[*_#@!$%&()\[\]]/g, '').trim(); 
+        userName = userName.replace(/[*_#@!$%&()\[\]]/g, '').trim();
         document.getElementById('display-user').innerText = userName;
 
         const datoCompleto = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
@@ -216,6 +225,17 @@
             script.id = callbackName;
             script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&action=check&callback=${callbackName}`;
             document.body.appendChild(script);
+        }
+
+        // 🔄 FUNZIONE DI CONTROLLO IMMEDIATO DOPO IL PAGAMENTO STRIPE
+        function forzaRicontrolloPagamento() {
+            const loadingScreen = document.getElementById('loading-screen');
+            const loadingText = document.getElementById('loading-text');
+            if (loadingScreen) {
+                loadingText.innerText = "Controllo pagamento in corso...";
+                loadingScreen.style.display = 'flex';
+            }
+            verificaAbbonamentoIniziale();
         }
 
         window.onload = function() {
