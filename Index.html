@@ -60,6 +60,46 @@
         .testo-sottotitolo { display: block; font-size: 15px; color: #10b981; font-weight: 700; margin-top: 5px; }
         #qr-image { width: 200px; height: 200px; border-radius: 16px; border: 4px solid #10b981; padding: 8px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); background: white; }
 
+        /* 👑 NUOVO STILE: Schermata blocco opaca Stripe Premium */
+        #stripe-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(244, 246, 249, 0.94);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .premium-box {
+            background: white;
+            border-radius: 24px;
+            padding: 45px 35px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            width: 90%;
+            max-width: 460px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .stripe-btn {
+            display: block;
+            background: #635bff;
+            color: white;
+            padding: 16px;
+            font-size: 17px;
+            font-weight: 800;
+            border-radius: 12px;
+            text-decoration: none;
+            margin-top: 25px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 16px rgba(99, 91, 255, 0.3);
+            transition: 0.2s;
+        }
+        .stripe-btn:active { transform: translateY(2px); box-shadow: none; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) { .layout-wrapper { justify-content: center; padding-left: 20px; padding-right: 20px; } }
     </style>
@@ -67,6 +107,23 @@
 <body>
 
     <div id="offline-banner">⚠️ Nessuna connessione Internet - Verifica il Wi-Fi</div>
+
+    <div id="stripe-overlay">
+        <div class="premium-box">
+            <span style="font-size: 55px; display: block; margin-bottom: 15px;">🔒</span>
+            <h2 style="color: #0f172a; font-size: 24px; margin-bottom: 12px;">Servizio Premium Non Attivo</h2>
+            <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 20px; padding: 0 10px;">
+                Per utilizzare la funzione di <strong>Blocco Servizio SOS</strong> e ricevere videoassistenza immediata in cassa, attiva il piano Premium Annuale.
+            </p>
+            <div style="background: #f8fafc; border-radius: 12px; padding: 15px; margin: 15px 0;">
+                <span style="font-size: 28px; font-weight: 800; color: #1e293b;">€350</span>
+                <span style="font-size: 14px; color: #64748b; font-weight: 600;"> / anno + IVA</span>
+            </div>
+            <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="stripe-btn">
+                💳 Sblocca Servizio
+            </a>
+        </div>
+    </div>
 
     <div class="layout-wrapper">
         <div class="container">
@@ -110,14 +167,46 @@
         // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
-        let locationName = urlParams.get('loc') || 'Sede';
+        let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'Sede';
+        let locationId = urlParams.get('loc') || ''; // ID numerico lungo di Lightspeed
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
+        
         locationName = locationName.replace(/[*#@!$%&]/g, '').trim(); userName = userName.replace(/[*#@!$%&]/g, '').trim();
         document.getElementById('display-user').innerText = userName;
 
         const datoCompleto = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
         const widget = document.getElementById('widget-3cx');
         if(widget) { widget.setAttribute('visitor-name', datoCompleto); widget.setAttribute('default-user-name', datoCompleto); }
+
+        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+
+        // ==========================================
+        // 👑 NUOVA LOGICA: VERIFICA ABBONAMENTO AUTOMATICA
+        // ==========================================
+        function verificaAbbonamentoIniziale() {
+            const callbackName = 'checkLicense_' + Math.round(100000 * Math.random());
+            
+            window[callbackName] = function(data) {
+                if (data.status === 'SCADUTO') {
+                    document.getElementById('stripe-overlay').style.display = 'flex';
+                } else {
+                    document.getElementById('stripe-overlay').style.display = 'none';
+                }
+                delete window[callbackName];
+                document.getElementById(callbackName).remove();
+            };
+
+            const script = document.createElement('script');
+            script.id = callbackName;
+            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&action=check&callback=${callbackName}`;
+            document.body.appendChild(script);
+        }
+
+        // Avvia il controllo della licenza non appena la pagina è pronta
+        window.onload = function() {
+            verificaAbbonamentoIniziale();
+            checkCooldown();
+        };
 
         // ==========================================
         // SINTETIZZATORE AUDIO E QR CODE
@@ -140,7 +229,7 @@
         // ==========================================
         // SCUDO ANTI-SPAM (COOLDOWN)
         // ==========================================
-        const TEMPO_BLOCCO_MS = 3 * 60 * 1000; // 3 minuti
+        const TEMPO_BLOCCO_MS = 3 * 60 * 1000; 
 
         function avviaTimerCooldown(remainingMs) {
             const btn = document.getElementById('btn-sos');
@@ -179,8 +268,6 @@
             }
         }
 
-        checkCooldown();
-
         // ==========================================
         // CREAZIONE EVENTO MEET AUTOMATICO
         // ==========================================
@@ -188,18 +275,21 @@
             const btn = document.getElementById('btn-sos');
             btn.disabled = true;
             btn.innerText = "🔄 Generazione in corso...";
-
-            const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
             
             const callbackName = 'meetCallback_' + Math.round(100000 * Math.random());
 
             window[callbackName] = function(data) {
+                // Se nel frattempo l'abbonamento è scaduto sul server
+                if (data.status === 'SCADUTO') {
+                    document.getElementById('stripe-overlay').style.display = 'flex';
+                    btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
+                    return;
+                }
+
                 if (data.url) {
                     mostraQR(data.url);
-                    
                     localStorage.setItem('lastSOSRequest', Date.now());
                     avviaTimerCooldown(TEMPO_BLOCCO_MS);
-
                 } else {
                     alert("Errore da Google: " + (data.error || "Impossibile creare la stanza."));
                     btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
@@ -210,8 +300,8 @@
 
             const script = document.createElement('script');
             script.id = callbackName;
-            // 🛠️ RIGA MODIFICATA: Aggiunto "&user=" alla fine per spedire il nome dinamico a Google Script!
-            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationName)}&user=${encodeURIComponent(userName)}&callback=${callbackName}`;
+            // Spedisce action=sos insieme a tutti i parametri richiesti
+            script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&loc_name=${encodeURIComponent(locationName)}&user=${encodeURIComponent(userName)}&action=sos&callback=${callbackName}`;
             script.onerror = function() {
                 alert("Errore di rete o restrizione di sicurezza sul tablet.");
                 btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
