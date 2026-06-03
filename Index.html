@@ -35,12 +35,12 @@
         
         /* 🔒 STATO INIZIALE: Il contenuto principale parte NASCOSTO */
         .layout-wrapper { display: none; align-items: center; justify-content: flex-start; min-height: 100vh; padding-left: 12%; box-sizing: border-box; }
-        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; }
+        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; position: relative; }
 
         /* 🏷️ STILE DEL LOGO AZIENDALE */
         .brand-logo {
             width: 100%;
-            max-width: 240px;  /* Dimensione ideale per il logo esteso con pay-off */
+            max-width: 240px;
             height: auto;
             margin: 0 auto 20px auto;
             display: block;
@@ -51,11 +51,42 @@
         .istruzioni { color: #64748b; font-size: 16px; line-height: 1.5; margin-bottom: 20px; }
         hr { border: 0; height: 1px; background: #e2e8f0; margin: 25px 0; }
         
-        /* Rilevatore Offline (Banner Nascosto) */
-        #offline-banner { position: fixed; top: -80px; left: 0; width: 100%; background-color: #ef4444; color: white; text-align: center; padding: 18px; font-weight: 800; font-size: 16px; z-index: 9999; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: top 0.4s; text-transform: uppercase; box-sizing: border-box; }
+        /* ⏳ NUOVO: Banner Soft di Pre-Avviso Scadenza (Giallo) */
+        #expiry-warning-banner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            background-color: #fef08a; /* Giallo pastello */
+            border-bottom: 2px solid #eab308;
+            color: #854d0e;
+            text-align: center;
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 4px 15px rgba(234, 179, 8, 0.15);
+            box-sizing: border-box;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .renew-mini-btn {
+            background: #eab308;
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 800;
+            box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3);
+        }
+
+        /* Rilevatore Offline */
+        #offline-banner { position: fixed; top: -80px; left: 0; width: 100%; background-color: #ef4444; color: white; text-align: center; padding: 18px; font-weight: 800; font-size: 16px; z-index: 10000; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: top 0.4s; text-transform: uppercase; box-sizing: border-box; }
         #offline-banner.active { top: 0; }
         
-        /* Box radar (solo pallino) */
+        /* Pallino Radar */
         .radar-box { margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
         .radar-dot { width: 12px; height: 12px; background-color: #8b5cf6; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(139, 92, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
@@ -65,83 +96,30 @@
         .sos-btn:active { transform: translateY(2px); box-shadow: none; }
         .sos-btn:disabled { background: #cbd5e1; color: #475569; box-shadow: none; cursor: not-allowed; }
 
-        /* Stile QR Code iper-visibile */
+        /* QR Code */
         #qr-result { margin-top: 20px; display: none; animation: fadeIn 0.5s ease-out; }
         .testo-scansione { font-size: 22px; color: #1e293b; font-weight: 800; margin-bottom: 20px; line-height: 1.2; text-transform: uppercase; }
         .testo-sottotitolo { display: block; font-size: 15px; color: #10b981; font-weight: 700; margin-top: 5px; }
         #qr-image { width: 200px; height: 200px; border-radius: 16px; border: 4px solid #10b981; padding: 8px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); background: white; }
 
-        /* ⏳ Schermata iniziale di caricamento (Loader) */
-        #loading-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #f4f6f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            z-index: 999999;
-        }
-        .spinner {
-            width: 50px; height: 50px;
-            border: 5px solid #cbd5e1;
-            border-top: 5px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
+        /* Schermata iniziale di caricamento (Loader) */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f6f9; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 999999; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #cbd5e1; border-top: 5px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 👑 Schermata blocco opaca Stripe Premium */
-        #stripe-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(244, 246, 249, 0.96);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 99999;
-            align-items: center;
-            justify-content: center;
-            box-sizing: border-box;
-        }
-        .premium-box {
-            background: white;
-            border-radius: 24px;
-            padding: 45px 35px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.12);
-            width: 90%;
-            max-width: 460px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-        }
-        .stripe-btn {
-            display: block;
-            background: #635bff;
-            color: white;
-            padding: 16px;
-            font-size: 17px;
-            font-weight: 800;
-            border-radius: 12px;
-            text-decoration: none;
-            margin-top: 25px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 6px 16px rgba(99, 91, 255, 0.3);
-            transition: 0.2s;
-        }
+        #stripe-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 246, 249, 0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 99999; align-items: center; justify-content: center; box-sizing: border-box; }
+        .premium-box { background: white; border-radius: 24px; padding: 45px 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.12); width: 90%; max-width: 460px; text-align: center; border: 1px solid #e2e8f0; }
+        .stripe-btn { display: block; background: #635bff; color: white; padding: 16px; font-size: 17px; font-weight: 800; border-radius: 12px; text-decoration: none; margin-top: 25px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 6px 16px rgba(99, 91, 255, 0.3); transition: 0.2s; }
         .stripe-btn:active { transform: translateY(2px); box-shadow: none; }
 
-        /* Forza la scomparsa totale di 3CX se la licenza è bloccata */
+        /* Scomparsa di 3CX nel blocco totale */
         body.licenza-bloccata call-us-selector,
         body.licenza-bloccata #tcx-callus-js,
         body.licenza-bloccata .tcx-callus-button,
         body.licenza-bloccata div[id^="tcx-"],
         body.licenza-bloccata [id*="3cx"] {
-            display: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
+            display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
@@ -153,6 +131,11 @@
     <div id="loading-screen">
         <div class="spinner"></div>
         <div style="color: #64748b; font-weight: 600; font-size: 16px;">Verifica licenza in corso...</div>
+    </div>
+
+    <div id="expiry-warning-banner">
+        <span>⚠️ Il servizio Premium scadrà tra <span id="expiry-days">X</span> giorni. Rinnova ora per evitare blocchi.</span>
+        <a href="https://buy.stripe.com/tuo_link_di_pagamento_qui" target="_blank" class="renew-mini-btn">Rinnova ora</a>
     </div>
 
     <div id="offline-banner">⚠️ Nessuna connessione Internet - Verifica il Wi-Fi</div>
@@ -207,15 +190,9 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
     
     <script>
-        // ==========================================
-        // GESTIONE CONNESSIONE (OFFLINE DETECTOR)
-        // ==========================================
         function verificaConnessione() { const banner = document.getElementById('offline-banner'); if (navigator.onLine) { banner.classList.remove('active'); } else { banner.classList.add('active'); } }
         window.addEventListener('online', verificaConnessione); window.addEventListener('offline', verificaConnessione); verificaConnessione();
 
-        // ==========================================
-        // GESTIONE DATI UTENTE
-        // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'Sede';
@@ -232,48 +209,57 @@
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
         // ==========================================
-        // 🔒 GESTIONE LOGICA INTERFACCIA E FILTRI
+        // 🔒 NUOVO MOTORE DI STATO CON PRE-AVVISO
         // ==========================================
-        function impostaStatoInterfaccia(bloccata) {
+        function impostaStatoInterfaccia(statoRisposta) {
             const overlay = document.getElementById('stripe-overlay');
             const mainContent = document.getElementById('main-content');
             const widget3cx = document.getElementById('widget-3cx');
             const loadingScreen = document.getElementById('loading-screen');
+            const warningBanner = document.getElementById('expiry-warning-banner');
             
             if (loadingScreen) { loadingScreen.style.display = 'none'; }
             
-            if (bloccata) {
+            if (statoRisposta === 'SCADUTO') {
                 document.body.classList.add('licenza-bloccata');
                 overlay.style.display = 'flex';
                 mainContent.style.display = 'none'; 
+                warningBanner.style.display = 'none';
                 if (widget3cx) { widget3cx.style.display = 'none'; }
                 
                 const tcxElements = document.querySelectorAll('.tcx-callus-button, div[id^="tcx-"], [id*="3cx"]');
                 tcxElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
-            } else {
+                
+            } else if (statoRisposta.startsWith('AVVISO')) {
+                // ⏳ PRE-AVVISO: Tutto attivo, ma mostra il banner giallo in alto
+                const giorni = statoRisposta.split(':')[1];
+                document.getElementById('expiry-days').innerText = giorni;
+                
                 document.body.classList.remove('licenza-bloccata');
                 overlay.style.display = 'none';
-                mainContent.style.display = 'flex'; 
+                mainContent.style.display = 'flex';
+                mainContent.style.paddingTop = '60px'; // Spazio per il banner giallo
+                warningBanner.style.display = 'flex';
+                if (widget3cx) { widget3cx.style.display = 'block'; }
+                
+            } else {
+                // TUTTO ATTIVO REGOLARMENTE
+                document.body.classList.remove('licenza-bloccata');
+                overlay.style.display = 'none';
+                mainContent.style.display = 'flex';
+                mainContent.style.paddingTop = '0px';
+                warningBanner.style.display = 'none';
                 if (widget3cx) { widget3cx.style.display = 'block'; }
             }
         }
 
-        // ==========================================
-        // VERIFICA ABBONAMENTO AUTOMATICA
-        // ==========================================
         function verificaAbbonamentoIniziale() {
             const callbackName = 'checkLicense_' + Math.round(100000 * Math.random());
-            
             window[callbackName] = function(data) {
-                if (data.status === 'SCADUTO') {
-                    impostaStatoInterfaccia(true);
-                } else {
-                    impostaStatoInterfaccia(false);
-                }
+                impostaStatoInterfaccia(data.status);
                 delete window[callbackName];
                 document.getElementById(callbackName).remove();
             };
-
             const script = document.createElement('script');
             script.id = callbackName;
             script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&action=check&callback=${callbackName}`;
@@ -285,9 +271,6 @@
             checkCooldown();
         };
 
-        // ==========================================
-        // SINTETIZZATORE AUDIO E QR CODE
-        // ==========================================
         function riproduciSuonoNotifica() {
             try { const AudioContext = window.AudioContext || window.webkitAudioContext; if (!AudioContext) return; const ctx = new AudioContext(); function tono(freq, start, dur) { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, start); gain.gain.setValueAtTime(0.5, start); gain.gain.exponentialRampToValueAtTime(0.01, start + dur); osc.start(start); osc.stop(start + dur); } tono(880, ctx.currentTime, 0.3); tono(1046.50, ctx.currentTime + 0.15, 0.4); } catch (e) {}
         }
@@ -303,33 +286,21 @@
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQR(e.detail); });
 
-        // ==========================================
-        // SCUDO ANTI-SPAM (COOLDOWN)
-        // ==========================================
         const TEMPO_BLOCCO_MS = 3 * 60 * 1000; 
 
         function avviaTimerCooldown(remainingMs) {
             const btn = document.getElementById('btn-sos');
             btn.disabled = true;
-
             function aggiornaTesto(ms) {
-                const minutes = Math.floor(ms / 60000);
-                const seconds = Math.floor((ms % 60000) / 1000);
+                const minutes = Math.floor(ms / 60000); const seconds = Math.floor((ms % 60000) / 1000);
                 btn.innerText = `⏳ Nuovo SOS tra ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
             }
-
             aggiornaTesto(remainingMs); 
-
             const interval = setInterval(() => {
                 remainingMs -= 1000;
                 if (remainingMs <= 0) {
-                    clearInterval(interval);
-                    btn.disabled = false;
-                    btn.innerText = "🚨 Richiedi Videoassistenza";
-                    localStorage.removeItem('lastSOSRequest');
-                } else {
-                    aggiornaTesto(remainingMs);
-                }
+                    clearInterval(interval); btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza"; localStorage.removeItem('lastSOSRequest');
+                } else { aggiornaTesto(remainingMs); }
             }, 1000);
         }
 
@@ -337,50 +308,32 @@
             const lastReq = localStorage.getItem('lastSOSRequest');
             if (lastReq) {
                 const timePassed = Date.now() - parseInt(lastReq);
-                if (timePassed < TEMPO_BLOCCO_MS) {
-                    avviaTimerCooldown(TEMPO_BLOCCO_MS - timePassed);
-                } else {
-                    localStorage.removeItem('lastSOSRequest'); 
-                }
+                if (timePassed < TEMPO_BLOCCO_MS) { avviaTimerCooldown(TEMPO_BLOCCO_MS - timePassed); } else { localStorage.removeItem('lastSOSRequest'); }
             }
         }
 
-        // ==========================================
-        // CREAZIONE EVENTO MEET AUTOMATICO
-        // ==========================================
         function creaChiamataMeetImmediata() {
             const btn = document.getElementById('btn-sos');
-            btn.disabled = true;
-            btn.innerText = "🔄 Generazione in corso...";
-            
+            btn.disabled = true; btn.innerText = "🔄 Generazione in corso...";
             const callbackName = 'meetCallback_' + Math.round(100000 * Math.random());
 
             window[callbackName] = function(data) {
                 if (data.status === 'SCADUTO') {
-                    impostaStatoInterfaccia(true);
+                    impostaStatoInterfaccia(data.status);
                     btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
                     return;
                 }
-
                 if (data.url) {
-                    mostraQR(data.url);
-                    localStorage.setItem('lastSOSRequest', Date.now());
-                    avviaTimerCooldown(TEMPO_BLOCCO_MS);
+                    mostraQR(data.url); localStorage.setItem('lastSOSRequest', Date.now()); avviaTimerCooldown(TEMPO_BLOCCO_MS);
                 } else {
-                    alert("Errore da Google: " + (data.error || "Impossibile creare la stanza."));
-                    btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
+                    alert("Errore da Google: " + (data.error || "Impossibile creare la stanza.")); btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
                 }
-                delete window[callbackName];
-                document.getElementById(callbackName).remove();
+                delete window[callbackName]; document.getElementById(callbackName).remove();
             };
 
             const script = document.createElement('script');
             script.id = callbackName;
             script.src = `${googleScriptUrl}?id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&loc_name=${encodeURIComponent(locationName)}&user=${encodeURIComponent(userName)}&action=sos&callback=${callbackName}`;
-            script.onerror = function() {
-                alert("Errore di rete o restrizione di sicurezza sul tablet.");
-                btn.disabled = false; btn.innerText = "🚨 Richiedi Videoassistenza";
-            };
             document.body.appendChild(script);
         }
     </script>
