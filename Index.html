@@ -134,7 +134,7 @@
 
     <script>
         // ========================================================
-        // 📥 CONFIGURAZIONE CHIRURGICA DATI CHAT 3CX (SENZA SPAZI)
+        // 📥 CONFIGURAZIONE CHIRURGICA DATI CHAT 3CX (NO SPAZI & NO PUNTI)
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
@@ -142,15 +142,18 @@
         let locationName = (urlParams.get('loc_name') || 'norivalmaster').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Rimozione caratteri speciali
-        userName = userName.replace(/[*#@!$%&]/g, '').trim();
+        // 🛠️ RIMOZIONE PUNTI E CARATTERI SPECIALI DALLE STRINGHE
+        userName = userName.replace(/[*#@!$%&.]/g, '').trim();
         locationName = locationName.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase().trim();
 
-        // 🛠️ RIMOZIONE TOTALE DEGLI SPAZI (replace(/\s+/g, ''))
-        const userSenzaSpazi = userName.replace(/\s+/g, '');
-        const locationSenzaSpazi = locationName.replace(/\s+/g, '');
+        const userFormattato = userName.trim();
+        const locationFormattata = locationName.trim();
 
-        // 🌟 STRINGA PULITA SENZA SPAZI PER IL 3CX
+        // 🛠️ RIMOZIONE TOTALE DI TUTTI GLI SPAZI VUOTI
+        const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
+        const locationSenzaSpazi = locationFormattata.replace(/\s+/g, '');
+
+        // 🌟 STRINGA FLUIDA PULITA PER IL 3CX (Esempio: IgliAruci-54472-norivalmaster)
         const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationSenzaSpazi;
 
         // Tracciamento interno per reset automatico cache
@@ -240,7 +243,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userName; // Mantiene lo spazio sul testo di benvenuto grafico
+        document.getElementById('display-user').innerText = userFormattato; 
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
