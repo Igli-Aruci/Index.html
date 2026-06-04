@@ -3,106 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Assistenza SOS</title>
+    <title>NO RIVAL POS SUPPORTO</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f2f2f7;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            background-color: #1c1c1e;
+            color: #ffffff;
             margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
         }
-        .container {
+        .header-bar {
+            background-color: #000000;
             text-align: center;
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 90%;
-            width: 400px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #2c2c2e;
+            position: relative;
         }
-        h1 {
-            font-size: 24px;
+        .close-btn {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            cursor: pointer;
+            color: #aeaea3;
+        }
+        .error-banner {
+            display: none;
+            background-color: #ff3b30;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .main-content {
+            display: flex;
+            flex: 1;
+            padding: 30px;
+            gap: 30px;
+            background-color: #2c2c2e;
+        }
+        .left-panel, .right-panel {
+            flex: 1;
+            background-color: #ffffff;
+            border-radius: 16px;
+            color: #000000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        .brand-logo {
+            font-weight: 900;
+            font-size: 26px;
+            color: #0052cc;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+        .brand-sub {
+            font-size: 10px;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            font-size: 22px;
+            margin: 0 0 10px 0;
             color: #1c1c1e;
+        }
+        .welcome-text {
+            color: #0052cc;
+            font-weight: bold;
+            font-size: 16px;
             margin-bottom: 20px;
         }
-        p {
-            font-size: 16px;
-            color: #3a3a3c;
-            margin-bottom: 30px;
-            line-height: 1.4;
+        .desc-text {
+            color: #48484a;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 40px;
+            max-width: 280px;
         }
         .btn-sos {
             background-color: #ff3b30;
             color: #ffffff;
             border: none;
-            padding: 20px 40px;
-            font-size: 22px;
-            font-weight: bold;
-            border-radius: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(255, 59, 48, 0.3);
-            transition: transform 0.1s, background-color 0.2s;
-            width: 100%;
-        }
-        .btn-sos:active {
-            transform: scale(0.95);
-            background-color: #d7261e;
-        }
-        .loading {
-            display: none;
-            margin-top: 20px;
+            padding: 16px 0;
             font-size: 16px;
-            color: #8e8e93;
-        }
-        .error-banner {
-            display: none;
-            margin-top: 20px;
-            background-color: #ffe5e5;
-            color: #ff3b30;
-            padding: 15px;
-            border-radius: 10px;
             font-weight: bold;
-            border: 1px solid #ff3b30;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 8px rgba(255, 59, 48, 0.3);
+            transition: background-color 0.2s;
+        }
+        .btn-sos:disabled {
+            background-color: #ffb3b0;
+            cursor: not-allowed;
+        }
+        /* Colonna destra - Stile 3CX Chat */
+        .right-panel {
+            background-color: #f2f2f7;
+            padding: 0;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        .cx-header {
+            background-color: #007acc;
+            color: #ffffff;
+            width: 100%;
+            padding: 20px 0;
+            font-size: 12px;
+            position: relative;
+        }
+        .cx-header::before {
+            content: "Powered By 3CX";
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            font-size: 9px;
+            opacity: 0.8;
+        }
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            background-color: #ffffff;
+            color: #007acc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px auto;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .cx-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .cx-label {
+            font-size: 13px;
+            color: #636366;
+            margin-bottom: 5px;
+        }
+        .cx-input-line {
+            font-size: 15px;
+            color: #1c1c1e;
+            border-bottom: 1px solid #c7c7cc;
+            padding-bottom: 5px;
+            font-weight: 500;
+        }
+        .cx-footer-btn {
+            background-color: #3a3a3c;
+            color: #ffffff;
+            width: 100%;
+            padding: 15px 0;
+            font-size: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1 id="title">Videoassistenza SOS</h1>
-    <p id="description">In caso di blocco del servizio o anomalie gravi, premi il pulsante per avviare una chiamata video con un tecnico.</p>
-    <button class="btn-sos" id="sos-button" onclick="startSOS()">🚨 SOS</button>
-    <div class="loading" id="loading">Creazione stanza Meet in corso...</div>
-    <div class="error-banner" id="error-banner"></div>
-</div>
+    <div class="header-bar">
+        <div class="close-btn">✕</div>
+        NO RIVAL POS SUPPORTO
+    </div>
+
+    <div class="error-banner" id="error-banner">⚠️ Errore server creazione Meet.</div>
+
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="brand-logo">NO RIVAL</div>
+            <div class="brand-sub">Hospitality Solutions</div>
+            
+            <h2>Assistenza SOS</h2>
+            <div class="welcome-text" id="welcome-user">Benvenuto</div>
+            
+            <div class="desc-text" id="desc-text">
+                Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.
+            </div>
+            
+            <button class="btn-sos" id="sos-button" onclick="startSOS()">
+                🚨 RICHIEDI VIDEOASSISTENZA
+            </button>
+        </div>
+
+        <div class="right-panel">
+            <div class="cx-header">
+                <div class="avatar-circle">IA</div>
+                <div style="font-weight:bold; font-size:15px;" id="agent-name">Igli Aruci</div>
+            </div>
+            
+            <div class="cx-body">
+                <div class="cx-label">Possiamo avere i tuoi dati di contatto?</div>
+                <div class="cx-input-line" id="contact-info">Caricamento info...</div>
+            </div>
+            
+            <div class="cx-footer-btn">
+                💬 Chat
+            </div>
+        </div>
+    </div>
 
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const businessId = urlParams.get('id');
-    const locationId = urlParams.get('loc');
-    const locationName = urlParams.get('loc_name') || "Sede";
+    const businessId = urlParams.get('id') || "";
+    const locationId = urlParams.get('loc') || "";
+    const locationName = urlParams.get('loc_name') || "NO RIVAL MASTER";
     const lang = urlParams.get('lang') || 'it';
 
+    // Gestione testi in base alla lingua dell'iPad
     if (lang === 'en') {
-        document.getElementById('title').innerText = 'SOS Video Support';
-        document.getElementById('description').innerText = 'In case of service block or serious issues, press the button to start a video call with a technician.';
-        document.getElementById('loading').innerText = 'Creating Meet room...';
+        document.getElementById('desc-text').innerText = 'In case of service block or serious issues, press the button to start a video call with a technician.';
+        document.getElementById('sos-button').innerText = '🚨 REQUEST VIDEO SUPPORT';
     }
 
-    // Sostituisci questa stringa con il tuo URL /exec corrente di Google Apps Script
+    // Configurazione dinamica dei testi dell'interfaccia basata sui parametri reali dell'iPad
+    document.getElementById('welcome-user').innerText = `Benvenuto ${locationName.split(' ')[0]}`;
+    document.getElementById('contact-info').innerText = `${locationName.split(' ')[0]} ${businessId} ${locationName}`;
+
+    // Metti qui la tua URL /exec aggiornata derivata dal deploy di Apps Script
     const webAppUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
     function startSOS() {
         if (!businessId) {
-            showError(lang === 'en' ? 'Error: Missing Business ID' : 'Errore: ID Business mancante');
+            showError('Errore: ID Business mancante nell\'URL.');
             return;
         }
 
-        document.getElementById('sos-button').disabled = true;
-        document.getElementById('loading').style.display = 'block';
+        const btn = document.getElementById('sos-button');
+        btn.disabled = true;
+        btn.innerText = lang === 'en' ? '🔄 CREATING ROOM...' : '🔄 CREAZIONE STANZA...';
         document.getElementById('error-banner').style.display = 'none';
 
         const targetUrl = `${webAppUrl}?action=sos&id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&loc_name=${encodeURIComponent(locationName)}&lang=${lang}`;
@@ -110,21 +270,19 @@
         fetch(targetUrl)
             .then(response => response.json())
             .then(data => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('sos-button').disabled = false;
+                btn.disabled = false;
+                btn.innerText = lang === 'en' ? '🚨 REQUEST VIDEO SUPPORT' : '🚨 RICHIEDI VIDEOASSISTENZA';
 
                 if (data.status === 'ATTIVO' && data.url) {
                     window.location.href = data.url;
-                } else if (data.status === 'SCADUTO') {
-                    window.location.href = 'https://buy.stripe.com/tuo_link_di_pagamento_reale';
                 } else {
-                    showError(data.error || (lang === 'en' ? 'Server error creating Meet.' : 'Errore server creazione Meet.'));
+                    showError(data.error || 'Errore server creazione Meet.');
                 }
             })
             .catch(error => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('sos-button').disabled = false;
-                showError(lang === 'en' ? 'Connection error.' : 'Errore di connessione.');
+                btn.disabled = false;
+                btn.innerText = lang === 'en' ? '🚨 REQUEST VIDEO SUPPORT' : '🚨 RICHIEDI VIDEOASSISTENZA';
+                showError('Errore di connessione con il server.');
             });
     }
 
