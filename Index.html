@@ -88,26 +88,26 @@
         * { box-sizing: border-box; }
 
         html, body { height: 100%; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: radial-gradient(1200px 600px at 20% 10%, rgba(99, 91, 255, 0.35), transparent 55%), radial-gradient(900px 500px at 85% 20%, rgba(16, 185, 129, 0.18), transparent 60%), linear-gradient(135deg, var(--bg), var(--bg2)); color: var(--text); overflow-x: hidden; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: radial-gradient(1200px 600px at 20% 10%, rgba(99, 91, 255, 0.35), transparent 55%), radial-gradient(900px 500px at 85% 20%, rgba(16, 185, 129, 0.18), transparent 60%), linear-gradient(135deg, var(--bg), var(--bg2)); color: var(--text); overflow: hidden; }
 
-        .shell { min-height: 100%; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+        .shell { height: 100vh; padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 12px; }
         .shell-header { width: 100%; max-width: 1080px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; color: rgba(255,255,255,0.92); }
         .shell-brand { display: flex; align-items: center; gap: 12px; }
         .shell-brand img { width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25)); }
         .shell-title { font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
         .shell-subtitle { font-size: 12px; color: rgba(255,255,255,0.72); margin-top: 2px; }
 
-        .shell-main { width: 100%; max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
+        .shell-main { width: 100%; max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; align-items: stretch; flex: 1; min-height: 0; }
         @media (min-width: 860px) {
-            .shell-main { grid-template-columns: 1fr 380px; gap: 18px; }
+            .shell-main { grid-template-columns: 1fr 380px; gap: 16px; }
         }
 
-        .container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); width: 100%; text-align: center; }
+        .container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); width: 100%; text-align: center; }
 
-        .brand-logo { max-width: 220px; height: auto; margin: 0 auto 18px auto; display: block; }
-        h2 { color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
-        .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
-        p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
+        .brand-logo { max-width: 200px; height: auto; margin: 0 auto 14px auto; display: block; }
+        h2 { color: #1e293b; margin: 0 0 8px 0; font-size: 22px; font-weight: 800; }
+        .benvenuto { color: #3b82f6; font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+        p { color: #64748b; font-size: 14px; line-height: 1.45; margin-bottom: 16px; }
         .ticket-bar { display: none; margin: 14px 0 18px; padding: 12px 12px; border-radius: 14px; border: 1px solid var(--border); background: rgba(15, 23, 42, 0.04); text-align: left; }
         .ticket-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .ticket-label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(15, 23, 42, 0.65); }
@@ -133,9 +133,9 @@
         #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
-        #qr-result { margin-top: 22px; display: none; }
-        .testo-scansione { font-size: 15px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
-        #qr-image { width: min(260px, 70vw); aspect-ratio: 1 / 1; height: auto; border-radius: 14px; border: 4px solid #10b981; padding: 6px; background: white; }
+        #qr-result { margin-top: 16px; display: none; }
+        .testo-scansione { font-size: 13px; color: #1e293b; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; }
+        #qr-image { width: min(190px, 52vw); aspect-ratio: 1 / 1; height: auto; border-radius: 14px; border: 4px solid #10b981; padding: 6px; background: white; }
         .wifi-alert-banner { position: fixed; top: -70px; left: 0; right: 0; text-align: center; padding: 14px 20px; font-size: 14px; font-weight: 600; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 99999; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .wifi-alert-banner.mostra { top: 0; }
         .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
@@ -144,13 +144,29 @@
         .chat-panel { display: none; }
         body.licenza-attiva .chat-panel { display: block; }
 
-        #container-widget-3cx { width: 100%; height: min(72vh, 680px); min-height: 420px; border-radius: var(--radius); overflow: hidden; background: rgba(255,255,255,0.9); border: 1px solid var(--border); box-shadow: var(--shadow); }
+        #container-widget-3cx { width: 100%; height: 100%; min-height: 0; border-radius: var(--radius); overflow: hidden; background: rgba(255,255,255,0.9); border: 1px solid var(--border); box-shadow: var(--shadow); }
         #container-widget-3cx call-us-selector { display: block !important; width: 100%; height: 100%; }
         iframe[title*="3CX"] { width: 100% !important; height: 100% !important; }
 
         #widget-3cx, call-us-selector, iframe[title*="3CX"], div[id^="tcx-"] { display: none !important; visibility: hidden !important; }
         body.licenza-attiva #widget-3cx, body.licenza-attiva call-us-selector, body.licenza-attiva iframe[title*="3CX"], body.licenza-attiva div[id^="tcx-"] { display: block !important; visibility: visible !important; }
         .tcx-callus-button { display: none !important; visibility: hidden !important; }
+
+        .left-panel, .chat-panel { min-height: 0; }
+
+        @media (min-width: 768px) and (orientation: landscape) {
+            .shell { padding: 12px 12px 14px; gap: 10px; }
+            .container { padding: 18px; }
+            .brand-logo { max-width: 180px; margin-bottom: 10px; }
+            h2 { font-size: 20px; margin-bottom: 6px; }
+            .benvenuto { font-size: 16px; margin-bottom: 10px; }
+            p { font-size: 13px; margin-bottom: 12px; }
+            .ticket-bar { margin: 10px 0 12px; padding: 10px; }
+            #qr-result { margin-top: 12px; }
+            #qr-image { width: min(160px, 36vw); padding: 5px; }
+            .direct-meet-btn { padding: 12px; font-size: 12px; margin-top: 10px; }
+            .sos-btn { padding: 14px; font-size: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -207,7 +223,7 @@
                     <div id="qr-result">
                         <div class="testo-scansione" id="text-act-scan">📱 Scansiona o clicca sotto per entrare</div>
                         <img id="qr-image" src="" alt="QR Code">
-                        <a id="direct-meet-link" href="#" target="_blank" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
+                        <a id="direct-meet-link" href="#" target="_blank" rel="noopener noreferrer" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
                     </div>
                 </div>
             </div>
@@ -440,7 +456,7 @@
         }
 
         function mostraQrCodeArea(url) {
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('direct-meet-link').href = url;
             document.getElementById('qr-result').style.display = 'block';
@@ -464,6 +480,27 @@
                 }
             } catch(e){}
         }
+
+        function apriMeet(url) {
+            try {
+                const w = window.open(url, '_blank');
+                if (w) return;
+            } catch (e) {}
+            try {
+                window.location.href = url;
+            } catch (e2) {}
+        }
+
+        (function() {
+            const link = document.getElementById('direct-meet-link');
+            if (link) {
+                link.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    const url = link.href;
+                    if (url && url !== '#') apriMeet(url);
+                });
+            }
+        })();
 
         function avviaContoRovescia(tempoScadenza) {
             if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
