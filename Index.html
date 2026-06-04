@@ -102,7 +102,7 @@
             .shell-main { grid-template-columns: 1fr 380px; gap: 16px; }
         }
 
-        .container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); width: 100%; text-align: center; }
+        .container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); width: 100%; max-width: 640px; margin: 0 auto; text-align: center; }
 
         .brand-logo { max-width: 200px; height: auto; margin: 0 auto 14px auto; display: block; }
         h2 { color: #1e293b; margin: 0 0 8px 0; font-size: 22px; font-weight: 800; }
@@ -130,7 +130,7 @@
         .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; display: none; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 360px; }
         #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
         #qr-result { margin-top: 16px; display: none; }
@@ -152,7 +152,9 @@
         body.licenza-attiva #widget-3cx, body.licenza-attiva call-us-selector, body.licenza-attiva iframe[title*="3CX"], body.licenza-attiva div[id^="tcx-"] { display: block !important; visibility: visible !important; }
         .tcx-callus-button { display: none !important; visibility: hidden !important; }
 
-        .left-panel { min-height: 0; height: 100%; display: flex; flex-direction: column; }
+        .left-panel { min-height: 0; height: 100%; display: flex; flex-direction: column; align-items: center; }
+        body.licenza-attiva .left-panel { justify-content: flex-start; }
+        body:not(.licenza-attiva) .left-panel { justify-content: center; }
         .chat-panel { min-height: 0; height: 100%; }
 
         @media (min-width: 768px) and (orientation: landscape) {
