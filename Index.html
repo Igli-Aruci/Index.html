@@ -4,6 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS / POS Support</title>
+    
+    <script>
+        // ==========================================
+        // 📡 INTERCETTAZIONE AUTOMATICA WEBSOCKET & DING
+        // ==========================================
+        (function() {
+            const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
+
+            function catturaLink(link) {
+                window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
+            }
+
+            const OrigWebSocket = window.WebSocket;
+            window.WebSocket = function(url, protocols) {
+                const ws = new OrigWebSocket(url, protocols);
+                ws.addEventListener('message', async function(e) {
+                    try {
+                        let msg = "";
+                        if (typeof e.data === 'string') msg = e.data;
+                        else if (e.data instanceof Blob) msg = await e.data.text();
+                        else if (e.data instanceof ArrayBuffer) msg = new TextDecoder().decode(e.data);
+                        else msg = JSON.stringify(e.data);
+                        
+                        const match = msg.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    } catch(err) {}
+                });
+                return ws;
+            };
+
+            const origFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const response = await origFetch.apply(this, args);
+                try {
+                    const clone = response.clone();
+                    clone.text().then(text => {
+                        const match = text.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    }).catch(e=>{});
+                } catch(err) {}
+                return response;
+            };
+
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function() {
+                this.addEventListener('load', function() {
+                    try {
+                        const match = this.responseText.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    } catch(err) {}
+                });
+                origOpen.apply(this, arguments);
+            };
+        })();
+    </script>
+
     <style>
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; width: 100%; overflow-x: hidden; }
         .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 90%; max-width: 420px; text-align: center; z-index: 1; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin 0.4s ease, max-width 0.4s ease; }
@@ -78,7 +134,7 @@
 
     <script>
         // ==========================================
-        // 📥 1. ESTRAZIONE IDENTICA AL CODICE ORIGINALE
+        // 📥 GESTIONE DATI ORIGINALE BLINDATA AL 100%
         // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
@@ -92,7 +148,6 @@
         const userFormattato = userName.trim(); 
         const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
 
-        // Invio immediato al widget 3CX
         const widget = document.getElementById('widget-3cx');
         if(widget) {
             widget.setAttribute('visitor-name', datoCompleto);
@@ -100,7 +155,7 @@
         }
 
         // ==========================================
-        // 🌐 2. TRADUZIONI E CONFIGURAZIONE INTERFACCIA
+        // 🌐 TRADUZIONI E CONFIGURAZIONE INTERFACCIA
         // ==========================================
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const userLang = (navigator.language || navigator.userLanguage || 'it');
@@ -204,6 +259,7 @@
                 document.getElementById('btn-check').disabled = true;
                 document.getElementById('loader-lock').style.display = 'block';
             }
+            // Usa locationFormattata per allinearsi correttamente al controllo Google
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationFormattata, action: 'check' },
                 function(data) {
@@ -273,6 +329,26 @@
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('direct-meet-link').href = url;
             document.getElementById('qr-result').style.display = 'block';
+            
+            // 🔊 RIPRODUZIONE AUDIO ORIGINALE (IL DING)
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    function riproduciTono(frequenza, inizio, durata) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
+                        osc.frequency.setValueAtTime(frequenza, inizio);
+                        gain.gain.setValueAtTime(0.5, inizio);
+                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
+                        osc.start(inizio); osc.stop(inizio + durata);
+                    }
+                    const adesso = ctx.currentTime;
+                    riproduciTono(880, adesso, 0.3);         
+                    riproduciTono(1046.50, adesso + 0.15, 0.4); 
+                }
+            } catch(e){}
         }
 
         function avviaContoRovescia(tempoScadenza) {
@@ -310,6 +386,9 @@
                 }
             }
         }
+
+        // Ascoltatore evento websocket originale integrato per mostrare il QR code
+        window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
 
         window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
     </script>
