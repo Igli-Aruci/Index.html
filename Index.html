@@ -134,35 +134,31 @@
 
     <script>
         // ========================================================
-        // 📥 ACQUISIZIONE PARAMETRI DAL LINK DI LIGHTSPEED
+        // 📥 ACQUISIZIONE E RIALINEAMENTO TOTALE PARAMETRI
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
-        const locationId = (urlParams.get('loc') || 'sede').trim(); // Questo ID numerico serve al Database delle licenze!
+        const locationId = (urlParams.get('loc') || 'sede').trim(); // Mantenuto numerico per Colonna C Google Sheets
         let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
+        let deviceName = (urlParams.get('device') || 'iPad').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Pulizia caratteri di disturbo
-        userName = userName.replace(/[*#@!$%&.]/g, '').trim();
+        // Pulizia caratteri speciali residui
+        deviceName = deviceName.replace(/[*#@!$%&.]/g, '').trim();
         locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
+        userName = userName.replace(/[*#@!$%&.]/g, '').trim();
 
-        const userFormattato = userName.trim();
-        const locationFormattata = locationName.trim(); // "NO RIVAL MASTER" intatto con spazi e maiuscole
+        // 🌟 STRUCT RICHIESTA: NomeDispositivo Spazio BusinessID Spazio NomeSede (SENZA TRATTINI)
+        const stringaVisibileChat = deviceName + ' ' + businessId + ' ' + locationName;
 
-        // Togliamo gli spazi soltanto per il nome operatore
-        const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
-
-        // 🌟 STRINGA FINALE PER IL 3CX (Es: IgliAruci-54472-NO RIVAL MASTER)
-        const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationFormattata;
-
-        // Tracciamento interno anti-cache
-        let userHash = 0;
-        for (let i = 0; i < userSenzaSpazi.length; i++) {
-            userHash = (userHash << 5) - userHash + userSenzaSpazi.charCodeAt(i);
-            userHash |= 0;
+        // Tracciamento interno anti-congelamento cache del 3CX
+        let deviceHash = 0;
+        for (let i = 0; i < deviceName.length; i++) {
+            deviceHash = (deviceHash << 5) - deviceHash + deviceName.charCodeAt(i);
+            deviceHash |= 0;
         }
-        const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
-        const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationFormattata.replace(/\s+/g, '') + '-' + locationId + '-' + idUnivocoServer;
+        const idUnivocoServer = Math.abs(deviceHash).toString(36).substring(0, 4).toUpperCase();
+        const tracciamentoInterno = deviceName.replace(/\s+/g, '') + '-' + businessId + '-' + locationId + '-' + idUnivocoServer;
 
         if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
             localStorage.setItem('current_3cx_session_user', tracciamentoInterno);
@@ -242,7 +238,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userFormattato;
+        document.getElementById('display-user').innerText = userName;
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -278,7 +274,7 @@
             document.body.appendChild(script);
         }
 
-        // 🔐 FIX CRUCIALE: Qui passiamo al Database 'locationId' (numerico) proprio come all'inizio!
+        // 🔐 BLINDATO: Invia a Google Sheets il 'locationId' numerico originale per fare match perfetto sulla Colonna C
         function verificaLicenza(mostraLoaderPulsante = false) {
             if (!navigator.onLine || !businessId || staVerificando) return;
             staVerificando = true;
@@ -413,16 +409,7 @@
         }
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
-
-        window.onload = function() { 
-            if (!navigator.onLine) { 
-                document.getElementById('view-loading').style.display = 'none'; 
-                document.getElementById('view-lock').style.display = 'block'; 
-                mostraBanner(trad.errWifi, "rosso"); 
-            } else { 
-                verificaLicenza(false); 
-            } 
-        };
+        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
     </script>
     <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
