@@ -108,6 +108,19 @@
         h2 { color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
+        .ticket-bar { display: none; margin: 14px 0 18px; padding: 12px 12px; border-radius: 14px; border: 1px solid var(--border); background: rgba(15, 23, 42, 0.04); text-align: left; }
+        .ticket-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .ticket-label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(15, 23, 42, 0.65); }
+        .ticket-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 999px; font-weight: 800; font-size: 12px; border: 1px solid rgba(15, 23, 42, 0.10); }
+        .ticket-dot { width: 8px; height: 8px; border-radius: 999px; background: #94a3b8; }
+        .ticket-pill.wait { background: rgba(239, 68, 68, 0.08); color: #b91c1c; }
+        .ticket-pill.wait .ticket-dot { background: #ef4444; }
+        .ticket-pill.assigned { background: rgba(245, 158, 11, 0.12); color: #92400e; }
+        .ticket-pill.assigned .ticket-dot { background: #f59e0b; }
+        .ticket-pill.closed { background: rgba(16, 185, 129, 0.12); color: #065f46; }
+        .ticket-pill.closed .ticket-dot { background: #10b981; }
+        .ticket-sub { margin-top: 10px; font-size: 13px; color: rgba(15, 23, 42, 0.65); font-weight: 600; }
+        .ticket-sub strong { color: rgba(15, 23, 42, 0.85); }
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
@@ -181,6 +194,13 @@
                     <h2 id="text-act-title">Assistenza SOS</h2>
                     <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span></div>
                     <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat qui a destra.</p>
+                    <div id="ticket-bar" class="ticket-bar">
+                        <div class="ticket-row">
+                            <div class="ticket-label">Stato Ticket</div>
+                            <div id="ticket-pill" class="ticket-pill wait"><span class="ticket-dot"></span><span id="ticket-pill-text">In attesa</span></div>
+                        </div>
+                        <div id="ticket-sub" class="ticket-sub"></div>
+                    </div>
                     <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
                     <div id="loader-sos" class="spinner"></div>
 
@@ -469,6 +489,41 @@
 
         let pollingTicketTimer = null;
 
+        function aggiornaTicketBar(stato, assignedTo, closedBy) {
+            const bar = document.getElementById('ticket-bar');
+            const pill = document.getElementById('ticket-pill');
+            const pillText = document.getElementById('ticket-pill-text');
+            const sub = document.getElementById('ticket-sub');
+
+            if (!stato) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'block';
+
+            pill.className = 'ticket-pill';
+            sub.innerText = '';
+
+            if (stato === 'OPEN') {
+                pill.classList.add('wait');
+                pillText.innerText = 'In attesa';
+                sub.innerHTML = 'Nessuno ha preso in carico la richiesta.';
+                return;
+            }
+            if (stato === 'ASSIGNED') {
+                pill.classList.add('assigned');
+                pillText.innerText = 'Preso in carico';
+                if (assignedTo) sub.innerHTML = 'Tecnico: <strong>' + assignedTo + '</strong>';
+                return;
+            }
+            if (stato === 'CLOSED') {
+                pill.classList.add('closed');
+                pillText.innerText = 'Chiuso';
+                if (closedBy) sub.innerHTML = 'Chiuso da: <strong>' + closedBy + '</strong>';
+                return;
+            }
+        }
+
         function avviaPollingTicket(token) {
             if (pollingTicketTimer) clearInterval(pollingTicketTimer);
             function check() {
@@ -483,10 +538,12 @@
                             document.getElementById('btn-sos').disabled = false;
                             document.getElementById('btn-sos').innerText = trad.actSos;
                             document.getElementById('qr-result').style.display = 'none';
+                            aggiornaTicketBar('', '', '');
                             return;
                         }
                         document.getElementById('btn-sos').disabled = true;
                         document.getElementById('btn-sos').innerText = trad.sosSent;
+                        aggiornaTicketBar(res.status, res.assignedTo || '', res.closedBy || '');
                     },
                     function() {}
                 );
@@ -502,6 +559,7 @@
             if (token) {
                 document.getElementById('btn-sos').disabled = true;
                 document.getElementById('btn-sos').innerText = trad.sosSent;
+                aggiornaTicketBar('OPEN', '', '');
                 avviaPollingTicket(token);
             }
         }
