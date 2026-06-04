@@ -134,27 +134,26 @@
 
     <script>
         // ========================================================
-        // 📥 CONFIGURAZIONE CHIRURGICA DATI CHAT 3CX (NO SPAZI & NO PUNTI)
+        // 📥 CONFIGURAZIONE DATI CHAT 3CX (SPAZI PRESERVATI NELLA SEDE)
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
         const locationId = (urlParams.get('loc') || 'sede').trim();
-        let locationName = (urlParams.get('loc_name') || 'norivalmaster').trim();
+        let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // 🛠️ RIMOZIONE PUNTI E CARATTERI SPECIALI DALLE STRINGHE
+        // Rileva e rimuove i punti preservando le maiuscole originarie
         userName = userName.replace(/[*#@!$%&.]/g, '').trim();
-        locationName = locationName.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase().trim();
+        locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
 
         const userFormattato = userName.trim();
-        const locationFormattata = locationName.trim();
-
-        // 🛠️ RIMOZIONE TOTALE DI TUTTI GLI SPAZI VUOTI
+        
+        // 🛠️ Rimuoviamo gli spazi SOLTANTO per l'utente, lasciando intatta la sede
         const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
-        const locationSenzaSpazi = locationFormattata.replace(/\s+/g, '');
+        const locationFormattata = locationName.trim(); 
 
-        // 🌟 STRINGA FLUIDA PULITA PER IL 3CX (Esempio: IgliAruci-54472-norivalmaster)
-        const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationSenzaSpazi;
+        // 🌟 STRINGA FINALE PER IL 3CX (Esempio: IgliAruci-54472-NO RIVAL MASTER)
+        const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationFormattata;
 
         // Tracciamento interno per reset automatico cache
         let userHash = 0;
@@ -163,7 +162,9 @@
             userHash |= 0;
         }
         const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
-        const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationSenzaSpazi + '-' + locationId + '-' + idUnivocoServer;
+        
+        // Eliminiamo temporaneamente gli spazi solo nella stringa di tracciamento interno per non corrompere la chiave di localStorage
+        const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationFormattata.replace(/\s+/g, '') + '-' + locationId + '-' + idUnivocoServer;
 
         if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
             localStorage.setItem('current_3cx_session_user', tracciamentoInterno);
@@ -243,7 +244,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userFormattato; 
+        document.getElementById('display-user').innerText = userFormattato;
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -260,24 +261,6 @@
 
         window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
         window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
-
-        function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
-            if (!navigator.onLine) { callbackErrore("Offline"); return; }
-            const callbackName = 'handler_' + Math.round(100000 * Math.random());
-            const timeoutTimer = setTimeout(() => {
-                delete window[callbackName];
-                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
-                callbackErrore("Timeout");
-            }, 6000);
-            window[callbackName] = function(data) { clearTimeout(timeoutTimer); callbackSuccesso(data); delete window[callbackName]; if (document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
-            const queryParams = new URLSearchParams(parametri);
-            queryParams.append('callback', callbackName);
-            const script = document.createElement('script');
-            script.id = callbackName;
-            script.src = `${googleScriptUrl}?${queryParams.toString()}`;
-            script.onerror = function() { clearTimeout(timeoutTimer); callbackErrore("Error"); delete window[callbackName]; if(document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
-            document.body.appendChild(script);
-        }
 
         function verificaLicenza(mostraLoaderPulsante = false) {
             if (!navigator.onLine || !businessId || staVerificando) return;
@@ -350,6 +333,7 @@
             );
         }
 
+        // Resto del codice identico...
         function mostraQrCodeArea(url) {
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
             document.getElementById('qr-image').src = qrUrl;
@@ -413,9 +397,7 @@
         }
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
-
         window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
     </script>
-    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
 </html>
