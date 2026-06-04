@@ -134,7 +134,7 @@
 
     <script>
         // ========================================================
-        // 📥 CONFIGURAZIONE DATI CHAT 3CX (SPAZI PRESERVATI NELLA SEDE)
+        // 📥 CONFIGURAZIONE CHIARA DATI CHAT 3CX (SPAZI OK SU NEGOZIO)
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
@@ -142,15 +142,15 @@
         let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Rileva e rimuove i punti preservando le maiuscole originarie
+        // Rileva e rimuove i punti e caratteri strani
         userName = userName.replace(/[*#@!$%&.]/g, '').trim();
         locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
 
         const userFormattato = userName.trim();
-        
-        // 🛠️ Rimuoviamo gli spazi SOLTANTO per l'utente, lasciando intatta la sede
-        const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
         const locationFormattata = locationName.trim(); 
+
+        // Rimuoviamo gli spazi soltanto per il nome operatore, mantenendo intatto il negozio
+        const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
 
         // 🌟 STRINGA FINALE PER IL 3CX (Esempio: IgliAruci-54472-NO RIVAL MASTER)
         const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationFormattata;
@@ -162,8 +162,6 @@
             userHash |= 0;
         }
         const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
-        
-        // Eliminiamo temporaneamente gli spazi solo nella stringa di tracciamento interno per non corrompere la chiave di localStorage
         const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationFormattata.replace(/\s+/g, '') + '-' + locationId + '-' + idUnivocoServer;
 
         if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
@@ -262,6 +260,24 @@
         window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
         window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
 
+        function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
+            if (!navigator.onLine) { callbackErrore("Offline"); return; }
+            const callbackName = 'handler_' + Math.round(100000 * Math.random());
+            const timeoutTimer = setTimeout(() => {
+                delete window[callbackName];
+                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
+                callbackErrore("Timeout");
+            }, 6000);
+            window[callbackName] = function(data) { clearTimeout(timeoutTimer); callbackSuccesso(data); delete window[callbackName]; if (document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            const queryParams = new URLSearchParams(parametri);
+            queryParams.append('callback', callbackName);
+            const script = document.createElement('script');
+            script.id = callbackName;
+            script.src = `${googleScriptUrl}?${queryParams.toString()}`;
+            script.onerror = function() { clearTimeout(timeoutTimer); callbackErrore("Error"); delete window[callbackName]; if(document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            document.body.appendChild(script);
+        }
+
         function verificaLicenza(mostraLoaderPulsante = false) {
             if (!navigator.onLine || !businessId || staVerificando) return;
             staVerificando = true;
@@ -270,7 +286,7 @@
                 document.getElementById('loader-lock').style.display = 'block';
             }
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'check' },
+                { id: businessId, loc: locationFormattata, action: 'check' },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
@@ -311,7 +327,7 @@
             document.getElementById('loader-sos').style.display = 'block';
             
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'sos', lang: linguaModello },
+                { id: businessId, loc: locationFormattata, action: 'sos', lang: linguaModello },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
@@ -333,7 +349,6 @@
             );
         }
 
-        // Resto del codice identico...
         function mostraQrCodeArea(url) {
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
             document.getElementById('qr-image').src = qrUrl;
@@ -397,7 +412,18 @@
         }
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
-        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
+
+        // 🚀 AVVIO IMMEDIATO ALLA RIGENERAZIONE DELLA PAGINA
+        window.onload = function() { 
+            if (!navigator.onLine) { 
+                document.getElementById('view-loading').style.display = 'none'; 
+                document.getElementById('view-lock').style.display = 'block'; 
+                mostraBanner(trad.errWifi, "rosso"); 
+            } else { 
+                verificaLicenza(false); 
+            } 
+        };
     </script>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
 </html>
