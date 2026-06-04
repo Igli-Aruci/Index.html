@@ -78,14 +78,13 @@
 
     <script>
         // ==========================================
-        // 📥 1. REPLICATE LE IMPOSTAZIONI ORIGINALI 3CX
+        // 📥 1. ESTRAZIONE IDENTICA AL CODICE ORIGINALE
         // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         let locationName = urlParams.get('loc') || 'sede';
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // Pulisce i caratteri speciali preservando maiuscole, minuscole e spazi reali
         locationName = locationName.replace(/[*#@!$%&]/g, '');
         userName = userName.replace(/[*#@!$%&]/g, '');
 
@@ -93,6 +92,7 @@
         const userFormattato = userName.trim(); 
         const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
 
+        // Invio immediato al widget 3CX
         const widget = document.getElementById('widget-3cx');
         if(widget) {
             widget.setAttribute('visitor-name', datoCompleto);
@@ -100,7 +100,7 @@
         }
 
         // ==========================================
-        // 🌐 2. CODICE DI STRUTTURA E TRADUZIONI
+        // 🌐 2. TRADUZIONI E CONFIGURAZIONE INTERFACCIA
         // ==========================================
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const userLang = (navigator.language || navigator.userLanguage || 'it');
@@ -205,7 +205,7 @@
                 document.getElementById('loader-lock').style.display = 'block';
             }
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'check' },
+                { id: businessId, loc: locationFormattata, action: 'check' },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
@@ -246,7 +246,7 @@
             document.getElementById('loader-sos').style.display = 'block';
             
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'sos', lang: linguaModello },
+                { id: businessId, loc: locationFormattata, action: 'sos', lang: linguaModello },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
