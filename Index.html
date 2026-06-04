@@ -21,11 +21,18 @@
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
+
+        /* Regole CSS per nascondere forzatamente il 3CX quando la licenza è bloccata */
+        body.licenza-bloccata call-us-selector,
+        body.licenza-bloccata #tcx-callus-js,
+        body.licenza-bloccata .tcx-callus-button,
+        body.licenza-bloccata div[id^="tcx-"],
+        body.licenza-bloccata [id*="3cx"] {
+            display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+        }
     </style>
 </head>
-<body>
-
-    <div id="view-lock" class="container">
+<body class="licenza-bloccata"> <div id="view-lock" class="container">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2>Servizio Premium Non Attivo</h2>
         <p>Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
@@ -39,7 +46,7 @@
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2>Assistenza SOS</h2>
         <div class="benvenuto">Benvenuto <span id="display-user">Utente</span></div>
-        <p>Siamo a tua disposizione. Clicca per avviare la videochiamata immediata.</p>
+        <p>Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.</p>
         <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
         <div id="loader-sos" class="spinner"></div>
         <div id="qr-result">
@@ -47,6 +54,8 @@
             <img id="qr-image" src="" alt="QR Code">
         </div>
     </div>
+
+    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
@@ -59,15 +68,22 @@
 
         document.getElementById('display-user').innerText = userName;
 
+        // Passa i dettagli della cassa come nome utente identificativo all'interno del centralino 3CX
+        const datoCompleto3CX = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
+        const widget3cxElement = document.getElementById('widget-3cx');
+        if (widget3cxElement) {
+            widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
+            widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
+        }
+
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
             const callbackName = 'handler_' + Math.round(100000 * Math.random());
             
-            // Imposta un timer di sicurezza di 8 secondi per evitare il caricamento infinito
             const timeoutTimer = setTimeout(() => {
                 delete window[callbackName];
                 const scriptEl = document.getElementById(callbackName);
                 if (scriptEl) scriptEl.remove();
-                callbackErrore("Timeout: i server Google non rispondono.");
+                callbackErrore("Timeout server Google.");
             }, 8000);
 
             window[callbackName] = function(data) {
@@ -85,7 +101,7 @@
             script.src = `${googleScriptUrl}?${queryParams.toString()}`;
             script.onerror = function() {
                 clearTimeout(timeoutTimer);
-                callbackErrore("Errore di rete nell'iniezione dello script.");
+                callbackErrore("Errore di rete.");
                 delete window[callbackName];
                 if(document.getElementById(callbackName)) document.getElementById(callbackName).remove();
             };
@@ -94,12 +110,12 @@
 
         function verificaLicenza() {
             if (!businessId) {
-                document.getElementById('status-text').innerText = "Nessun parametro ID ricevuto dall'iPad.";
+                document.getElementById('status-text').innerText = "Attesa dati da Lightspeed...";
                 return;
             }
             document.getElementById('btn-check').disabled = true;
             document.getElementById('loader-lock').style.display = 'block';
-            document.getElementById('status-text').innerText = "Connessione al database di Google Sheets...";
+            document.getElementById('status-text').innerText = "Verifica licenza aziendale...";
 
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
@@ -109,17 +125,20 @@
                     document.getElementById('status-text').innerText = "";
                     
                     if (data.status === 'ATTIVO') {
+                        // Rimuove la classe di blocco: sblocca l'interfaccia e mostra il 3CX
+                        document.body.classList.remove('licenza-bloccata');
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                     } else {
-                        alert("❌ Licenza non attiva o scaduta per ID: " + businessId);
+                        document.body.classList.add('licenza-bloccata');
+                        alert("❌ Servizio non attivo o scaduto per l'ID cliente passato dal POS.");
                     }
                 },
                 function(messaggioErrore) {
                     document.getElementById('btn-check').disabled = false;
                     document.getElementById('loader-lock').style.display = 'none';
-                    document.getElementById('status-text').innerText = "Dispositivo pronto per la verifica.";
-                    alert("⚠️ Nota: " + messaggioErrore + " Assicurati di aver pubblicato la Nuova Versione su Apps Script.");
+                    document.getElementById('status-text').innerText = "";
+                    alert("⚠️ Errore: " + messaggioErrore);
                 }
             );
         }
@@ -138,14 +157,14 @@
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
                     } else {
-                        alert("Errore di creazione della stanza Meet.");
+                        alert("Errore Meet.");
                         document.getElementById('btn-sos').disabled = false;
                     }
                 },
                 function() {
                     document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
-                    alert("Errore durante l'invio della richiesta SOS.");
+                    alert("Errore invio SOS.");
                 }
             );
         }
@@ -154,5 +173,7 @@
             if(businessId !== '') { verificaLicenza(); }
         };
     </script>
+
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
 </html>
