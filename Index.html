@@ -102,7 +102,7 @@
     <div id="view-loading" class="container">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <div class="spinner"></div>
-        <p id="text-loading">Verifica abbonamento in corso...</p>
+        <p id="text-loading">Attendere per favore.</p>
     </div>
 
     <div id="view-lock" class="container" style="display: none;">
@@ -138,24 +138,20 @@
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
-        const locationId = (urlParams.get('loc') || 'sede').trim(); // Colonna C Google Sheets
+        const locationId = (urlParams.get('loc') || 'sede').trim(); 
         let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // 🛠️ FILTRO: Elimina i punti (.) e i caratteri speciali strani
         userName = userName.replace(/[*#@!$%&.]/g, '').trim();
         locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
 
         const userFormattato = userName.trim();
-        const locationFormattata = locationName.trim(); // Mantiene spazi e maiuscole originali
+        const locationFormattata = locationName.trim(); 
 
-        // Togliamo gli spazi SOLO dal nome operatore per compattarlo
         const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
 
-        // 🌟 STRUCT RICHIESTA: NomeUtente Spazio BusinessID Spazio NomeSede (DIVISI DA SPAZIO SINGOLO)
         const stringaVisibileChat = userSenzaSpazi + ' ' + businessId + ' ' + locationFormattata;
 
-        // Tracciamento interno anti-cache del 3CX
         let userHash = 0;
         for (let i = 0; i < userSenzaSpazi.length; i++) {
             userHash = (userHash << 5) - userHash + userSenzaSpazi.charCodeAt(i);
@@ -190,7 +186,7 @@
 
         const dizionario = {
             it: {
-                loading: "Verifica abbonamento in corso...",
+                loading: "Attendere per favore.", // 🔄 TESTO AGGIORNATO ANCHE NEL DIZIONARIO ITALIANO
                 lockTitle: "Servizio Premium Non Attivo",
                 lockDesc: "Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.",
                 lockLink: "💳 Sblocca Servizio",
@@ -209,7 +205,7 @@
                 licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale"
             },
             en: {
-                loading: "Checking subscription status...",
+                loading: "Please wait.",
                 lockTitle: "Premium Service Not Active",
                 lockDesc: "To use the SOS Service Block feature and receive immediate video assistance at checkout, please activate the Premium plan.",
                 lockLink: "💳 Unlock Service",
