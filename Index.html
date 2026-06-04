@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS / POS Support</title>
+
+    <script>
+        (function() {
+            const injectedUrl = "<?!= googleScriptUrl ?>";
+            if (injectedUrl && injectedUrl.indexOf("<?") === -1) {
+                window.GOOGLE_SCRIPT_URL = injectedUrl;
+            }
+            const injectedKey = "<?!= apiKey ?>";
+            if (injectedKey && injectedKey.indexOf("<?") === -1) {
+                window.GOOGLE_API_KEY = injectedKey;
+            }
+        })();
+    </script>
     
     <script>
         // ========================================================
@@ -179,7 +192,7 @@
         containerWidget.appendChild(selector3cx);
         // ========================================================
 
-        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        const googleScriptUrl = window.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const userLang = (navigator.language || navigator.userLanguage || 'it');
         const isEn = !userLang.startsWith('it');
         const linguaModello = isEn ? 'en' : 'it';
@@ -263,9 +276,10 @@
                 delete window[callbackName];
                 if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
                 callbackErrore("Timeout");
-            }, 6000);
+            }, 15000);
             window[callbackName] = function(data) { clearTimeout(timeoutTimer); callbackSuccesso(data); delete window[callbackName]; if (document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
             const queryParams = new URLSearchParams(parametri);
+            if (window.GOOGLE_API_KEY) queryParams.append('key', window.GOOGLE_API_KEY);
             queryParams.append('callback', callbackName);
             const script = document.createElement('script');
             script.id = callbackName;
