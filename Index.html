@@ -102,7 +102,7 @@
             .shell-main { grid-template-columns: 1fr 380px; gap: 16px; }
         }
 
-        .container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); width: 100%; max-width: 640px; margin: 0 auto; text-align: center; }
+        .container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); width: 100%; max-width: 720px; margin: 0 auto; text-align: center; }
 
         .brand-logo { max-width: 200px; height: auto; margin: 0 auto 14px auto; display: block; }
         h2 { color: #1e293b; margin: 0 0 8px 0; font-size: 22px; font-weight: 800; }
@@ -153,9 +153,15 @@
         .tcx-callus-button { display: none !important; visibility: hidden !important; }
 
         .left-panel { min-height: 0; height: 100%; display: flex; flex-direction: column; align-items: center; }
-        body.licenza-attiva .left-panel { justify-content: flex-start; }
+        body.licenza-attiva .left-panel { justify-content: center; }
+        body.licenza-attiva.qr-visibile .left-panel { justify-content: flex-start; }
         body:not(.licenza-attiva) .left-panel { justify-content: center; }
+
+        #view-active { padding: 28px; max-width: 720px; }
+        #view-active.qr-visibile { padding: 18px; max-width: 640px; }
+        body.licenza-attiva.qr-visibile .ticket-bar { margin: 10px 0 12px; padding: 10px; }
         .chat-panel { min-height: 0; height: 100%; }
+
 
         @media (min-width: 768px) and (orientation: landscape) {
             .shell { padding: 12px 12px 14px; gap: 10px; }
@@ -164,11 +170,12 @@
             h2 { font-size: 20px; margin-bottom: 6px; }
             .benvenuto { font-size: 16px; margin-bottom: 10px; }
             p { font-size: 13px; margin-bottom: 12px; }
-            .ticket-bar { margin: 10px 0 12px; padding: 10px; }
             #qr-result { margin-top: 12px; }
             #qr-image { width: min(160px, 36vw); padding: 5px; }
             .direct-meet-btn { padding: 12px; font-size: 12px; margin-top: 10px; }
             .sos-btn { padding: 14px; font-size: 15px; }
+            #view-active { max-width: 720px; }
+            #view-active.qr-visibile { max-width: 640px; }
         }
     </style>
 </head>
@@ -404,6 +411,7 @@
                         document.getElementById('btn-sos').disabled = false;
                         document.getElementById('btn-sos').innerText = trad.actSos;
                         document.getElementById('qr-result').style.display = 'none';
+                        setQrVisibile(false);
                         if (contoRovesciaTimer) { clearInterval(contoRovesciaTimer); contoRovesciaTimer = null; }
                         ripristinaTicketSePresente();
 
@@ -414,6 +422,7 @@
                         document.body.classList.remove('licenza-attiva');
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
+                        setQrVisibile(false);
                         mostraBanner(trad.licExpired, "rosso");
                         attivaLoopControllo();
                     }
@@ -447,14 +456,28 @@
                     } else {
                         mostraBanner(trad.errMeet, "rosso");
                         document.getElementById('btn-sos').disabled = false;
+                        setQrVisibile(false);
                     }
                 },
                 function() {
                     document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
                     mostraBanner(trad.errConn, "rosso");
+                    setQrVisibile(false);
                 }
             );
+        }
+
+        function setQrVisibile(isVisible) {
+            const body = document.body;
+            const viewActive = document.getElementById('view-active');
+            if (isVisible) {
+                body.classList.add('qr-visibile');
+                if (viewActive) viewActive.classList.add('qr-visibile');
+            } else {
+                body.classList.remove('qr-visibile');
+                if (viewActive) viewActive.classList.remove('qr-visibile');
+            }
         }
 
         function mostraQrCodeArea(url) {
@@ -462,6 +485,7 @@
             document.getElementById('qr-image').src = qrUrl;
             document.getElementById('direct-meet-link').href = url;
             document.getElementById('qr-result').style.display = 'block';
+            setQrVisibile(true);
             
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -578,11 +602,13 @@
                             document.getElementById('btn-sos').innerText = trad.actSos;
                             document.getElementById('qr-result').style.display = 'none';
                             aggiornaTicketBar('', '', '');
+                            setQrVisibile(false);
                             return;
                         }
                         document.getElementById('btn-sos').disabled = true;
                         document.getElementById('btn-sos').innerText = trad.sosSent;
                         aggiornaTicketBar(res.status, res.assignedTo || '', res.closedBy || '');
+                        setQrVisibile(true);
                     },
                     function() {}
                 );
@@ -595,6 +621,7 @@
             const token = localStorage.getItem('sos_ticket_' + businessId);
             const url = localStorage.getItem('sos_url_' + businessId);
             if (url) mostraQrCodeArea(url);
+            else setQrVisibile(false);
             if (token) {
                 document.getElementById('btn-sos').disabled = true;
                 document.getElementById('btn-sos').innerText = trad.sosSent;
