@@ -12,68 +12,45 @@
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
         
-        /* Bottoni */
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
         
-        /* Loader Spinner */
         .spinner { display: none; width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Area QR Code */
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
 
         /* 🚨 BANNER IN STILE MANCANZA CONNESSIONE / WI-FI */
-        .wifi-alert-banner {
-            position: absolute;
-            top: -60px; /* Nascosto sopra il bordo */
-            left: 0;
-            right: 0;
-            background-color: #ef4444; /* Rosso Errore */
-            color: white;
-            text-align: center;
-            padding: 12px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
-            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .wifi-alert-banner.mostra {
-            top: 0; /* Scivola in basso diventando visibile */
-        }
-        .wifi-alert-banner svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
+        .wifi-alert-banner { position: absolute; top: -60px; left: 0; right: 0; background-color: #ef4444; color: white; text-align: center; padding: 12px 20px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .wifi-alert-banner.mostra { top: 0; }
+        .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* Regole CSS per nascondere forzatamente il 3CX all'inizio */
+        #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"] {
+            display: none !important;
+            visibility: hidden !important;
         }
 
-        /* Regole di blocco per il Widget 3CX */
-        body.licenza-bloccata call-us-selector,
-        body.licenza-bloccata #tcx-callus-js,
-        body.licenza-bloccata .tcx-callus-button,
-        body.licenza-bloccata div[id^="tcx-"],
-        body.licenza-bloccata [id*="3cx"] {
-            display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+        /* Mostra il 3CX solo quando la licenza viene validata ed è attiva */
+        body.licenza-attiva #widget-3cx, 
+        body.licenza-attiva call-us-selector, 
+        body.licenza-attiva .tcx-callus-button,
+        body.licenza-attiva iframe[title*="3CX"] {
+            display: block !important;
+            visibility: visible !important;
         }
     </style>
 </head>
-<body class="licenza-bloccata">
+<body>
 
     <div id="error-banner" class="wifi-alert-banner">
-        <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-        </svg>
-        <span id="error-banner-message">Nessuna connessione al servizio o abbonamento scaduto.</span>
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <span id="error-banner-message">Servizio o abbonamento non attivo.</span>
     </div>
 
     <div id="view-lock" class="container">
@@ -119,38 +96,28 @@
             widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
         }
 
-        // Funzioni di gestione del Banner a comparsa
         function mostraBannerErrore(testo) {
             const banner = document.getElementById('error-banner');
             document.getElementById('error-banner-message').innerText = testo;
             banner.classList.add('mostra');
-            
-            // Si nasconde automaticamente dopo 5 secondi
-            setTimeout(() => {
-                banner.classList.remove('mostra');
-            }, 5000);
+            setTimeout(() => { banner.classList.remove('mostra'); }, 5000);
         }
 
-        function nascondiBannerErrore() {
-            document.getElementById('error-banner').classList.remove('mostra');
-        }
+        function nascondiBannerErrore() { document.getElementById('error-banner').classList.remove('mostra'); }
 
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
             const callbackName = 'handler_' + Math.round(100000 * Math.random());
-            
             const timeoutTimer = setTimeout(() => {
                 delete window[callbackName];
-                const scriptEl = document.getElementById(callbackName);
-                if (scriptEl) scriptEl.remove();
-                callbackErrore("Connessione assente o rallentata. Riprovare.");
+                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
+                callbackErrore("Timeout server Google.");
             }, 8000);
 
             window[callbackName] = function(data) {
                 clearTimeout(timeoutTimer);
                 callbackSuccesso(data);
                 delete window[callbackName];
-                const scriptEl = document.getElementById(callbackName);
-                if (scriptEl) scriptEl.remove();
+                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
             };
 
             const queryParams = new URLSearchParams(parametri);
@@ -160,7 +127,7 @@
             script.src = `${googleScriptUrl}?${queryParams.toString()}`;
             script.onerror = function() {
                 clearTimeout(timeoutTimer);
-                callbackErrore("Errore di rete nell'allineamento dati.");
+                callbackErrore("Errore di rete.");
                 delete window[callbackName];
                 if(document.getElementById(callbackName)) document.getElementById(callbackName).remove();
             };
@@ -168,13 +135,10 @@
         }
 
         function verificaLicenza() {
-            if (!businessId) {
-                document.getElementById('status-text').innerText = "Attesa dati terminale POS...";
-                return;
-            }
+            if (!businessId) { return; }
             document.getElementById('btn-check').disabled = true;
             document.getElementById('loader-lock').style.display = 'block';
-            document.getElementById('status-text').innerText = "Controllo stato licenza cassa...";
+            document.getElementById('status-text').innerText = "Verifica in corso...";
             nascondiBannerErrore();
 
             eseguiChiamataGoogle(
@@ -185,12 +149,13 @@
                     document.getElementById('status-text').innerText = "";
                     
                     if (data.status === 'ATTIVO') {
-                        document.body.classList.remove('licenza-bloccata');
+                        // SBLOCCO LICENZA ATTIVA
+                        document.body.classList.add('licenza-attiva');
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                     } else {
-                        document.body.classList.add('licenza-bloccata');
-                        mostraBannerErrore("❌ Servizio Premium Scaduto o Non Attivo per questa cassa.");
+                        document.body.classList.remove('licenza-attiva');
+                        mostraBannerErrore("❌ Servizio Premium Scaduto o Non Attivo.");
                     }
                 },
                 function(messaggioErrore) {
@@ -216,23 +181,20 @@
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
                     } else {
-                        mostraBannerErrore("Impossibile avviare il server video in questo momento.");
+                        mostraBannerErrore("Errore Meet.");
                         document.getElementById('btn-sos').disabled = false;
                     }
                 },
                 function() {
                     document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
-                    mostraBannerErrore("Errore di rete. Impossibile inviare la richiesta.");
+                    mostraBannerErrore("Errore invio richiesta SOS.");
                 }
             );
         }
 
-        window.onload = function() {
-            if(businessId !== '') { verificaLicenza(); }
-        };
+        window.onload = function() { if(businessId !== '') { verificaLicenza(); } };
     </script>
-
     <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
 </html>
