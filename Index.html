@@ -76,7 +76,7 @@
         .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
         .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; display: none; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
-        @keyframes spin { 0 { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
@@ -295,7 +295,15 @@
                         document.body.classList.add('licenza-attiva');
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
-                        controllaStatoBloccoSos();
+                        
+                        // 🟢 FIX CACHE AUTOMATICO: Ogni volta che la licenza è attiva, pulisce a forza i vecchi countdown bloccati
+                        localStorage.removeItem('sos_scadenza_' + businessId);
+                        localStorage.removeItem('sos_url_' + businessId);
+                        document.getElementById('btn-sos').disabled = false;
+                        document.getElementById('btn-sos').innerText = trad.actSos;
+                        document.getElementById('qr-result').style.display = 'none';
+                        if (contoRovesciaTimer) { clearInterval(contoRovesciaTimer); contoRovesciaTimer = null; }
+
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
                             mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
                         } else { nascondiBanner(); }
@@ -327,7 +335,7 @@
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
-                        // 🟢 SBLOCCO ISTANTANEO: Impostato blocco di soli 2 secondi (2 * 1000ms)
+                        // Sblocco istantaneo di 2 secondi
                         const scadenzaBlocco = Date.now() + (2 * 1000);
                         localStorage.setItem('sos_scadenza_' + businessId, scadenzaBlocco);
                         localStorage.setItem('sos_url_' + businessId, data.url);
@@ -394,18 +402,10 @@
             contoRovesciaTimer = setInterval(aggiornaTimer, 1000);
         }
 
+        // Rimossa la vecchia funzione che ricaricava i blocchi sporchi all'avvio
         function controllaStatoBloccoSos() {
-            const salvatoScadenza = localStorage.getItem('sos_scadenza_' + businessId);
-            const salvatoUrl = localStorage.getItem('sos_url_' + businessId);
-            if (salvatoScadenza && salvatoUrl) {
-                if (Date.now() < parseInt(salvatoScadenza, 10)) {
-                    mostraQrCodeArea(salvatoUrl);
-                    avviaContoRovescia(parseInt(salvatoScadenza, 10));
-                } else {
-                    localStorage.removeItem('sos_scadenza_' + businessId);
-                    localStorage.removeItem('sos_url_' + businessId);
-                }
-            }
+            localStorage.removeItem('sos_scadenza_' + businessId);
+            localStorage.removeItem('sos_url_' + businessId);
         }
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
