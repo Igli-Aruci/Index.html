@@ -134,28 +134,28 @@
 
     <script>
         // ========================================================
-        // 📥 CONFIGURAZIONE CHIARA DATI CHAT 3CX (SPAZI OK SU NEGOZIO)
+        // 📥 ACQUISIZIONE PARAMETRI DAL LINK DI LIGHTSPEED
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
-        const locationId = (urlParams.get('loc') || 'sede').trim();
+        const locationId = (urlParams.get('loc') || 'sede').trim(); // Questo ID numerico serve al Database delle licenze!
         let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Rileva e rimuove i punti e caratteri strani
+        // Pulizia caratteri di disturbo
         userName = userName.replace(/[*#@!$%&.]/g, '').trim();
         locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
 
         const userFormattato = userName.trim();
-        const locationFormattata = locationName.trim(); 
+        const locationFormattata = locationName.trim(); // "NO RIVAL MASTER" intatto con spazi e maiuscole
 
-        // Rimuoviamo gli spazi soltanto per il nome operatore, mantenendo intatto il negozio
+        // Togliamo gli spazi soltanto per il nome operatore
         const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
 
-        // 🌟 STRINGA FINALE PER IL 3CX (Esempio: IgliAruci-54472-NO RIVAL MASTER)
+        // 🌟 STRINGA FINALE PER IL 3CX (Es: IgliAruci-54472-NO RIVAL MASTER)
         const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationFormattata;
 
-        // Tracciamento interno per reset automatico cache
+        // Tracciamento interno anti-cache
         let userHash = 0;
         for (let i = 0; i < userSenzaSpazi.length; i++) {
             userHash = (userHash << 5) - userHash + userSenzaSpazi.charCodeAt(i);
@@ -278,6 +278,7 @@
             document.body.appendChild(script);
         }
 
+        // 🔐 FIX CRUCIALE: Qui passiamo al Database 'locationId' (numerico) proprio come all'inizio!
         function verificaLicenza(mostraLoaderPulsante = false) {
             if (!navigator.onLine || !businessId || staVerificando) return;
             staVerificando = true;
@@ -286,7 +287,7 @@
                 document.getElementById('loader-lock').style.display = 'block';
             }
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationFormattata, action: 'check' },
+                { id: businessId, loc: locationId, action: 'check' },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
@@ -327,7 +328,7 @@
             document.getElementById('loader-sos').style.display = 'block';
             
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationFormattata, action: 'sos', lang: linguaModello },
+                { id: businessId, loc: locationId, action: 'sos', lang: linguaModello },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
@@ -413,7 +414,6 @@
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
 
-        // 🚀 AVVIO IMMEDIATO ALLA RIGENERAZIONE DELLA PAGINA
         window.onload = function() { 
             if (!navigator.onLine) { 
                 document.getElementById('view-loading').style.display = 'none'; 
