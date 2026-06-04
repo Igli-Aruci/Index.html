@@ -5,24 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 90%; max-width: 420px; text-align: center; }
+        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; }
+        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 90%; max-width: 420px; text-align: center; z-index: 1; }
         .brand-logo { max-width: 200px; height: auto; margin: 0 auto 20px auto; display: block; }
         h2 { color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
+        
+        /* Bottoni */
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        
+        /* Loader Spinner */
         .spinner { display: none; width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Area QR Code */
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
 
-        /* Regole CSS per nascondere forzatamente il 3CX quando la licenza è bloccata */
+        /* 🚨 BANNER IN STILE MANCANZA CONNESSIONE / WI-FI */
+        .wifi-alert-banner {
+            position: absolute;
+            top: -60px; /* Nascosto sopra il bordo */
+            left: 0;
+            right: 0;
+            background-color: #ef4444; /* Rosso Errore */
+            color: white;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .wifi-alert-banner.mostra {
+            top: 0; /* Scivola in basso diventando visibile */
+        }
+        .wifi-alert-banner svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Regole di blocco per il Widget 3CX */
         body.licenza-bloccata call-us-selector,
         body.licenza-bloccata #tcx-callus-js,
         body.licenza-bloccata .tcx-callus-button,
@@ -32,7 +67,16 @@
         }
     </style>
 </head>
-<body class="licenza-bloccata"> <div id="view-lock" class="container">
+<body class="licenza-bloccata">
+
+    <div id="error-banner" class="wifi-alert-banner">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <span id="error-banner-message">Nessuna connessione al servizio o abbonamento scaduto.</span>
+    </div>
+
+    <div id="view-lock" class="container">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2>Servizio Premium Non Attivo</h2>
         <p>Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
@@ -68,12 +112,27 @@
 
         document.getElementById('display-user').innerText = userName;
 
-        // Passa i dettagli della cassa come nome utente identificativo all'interno del centralino 3CX
         const datoCompleto3CX = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
         const widget3cxElement = document.getElementById('widget-3cx');
         if (widget3cxElement) {
             widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
             widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
+        }
+
+        // Funzioni di gestione del Banner a comparsa
+        function mostraBannerErrore(testo) {
+            const banner = document.getElementById('error-banner');
+            document.getElementById('error-banner-message').innerText = testo;
+            banner.classList.add('mostra');
+            
+            // Si nasconde automaticamente dopo 5 secondi
+            setTimeout(() => {
+                banner.classList.remove('mostra');
+            }, 5000);
+        }
+
+        function nascondiBannerErrore() {
+            document.getElementById('error-banner').classList.remove('mostra');
         }
 
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
@@ -83,7 +142,7 @@
                 delete window[callbackName];
                 const scriptEl = document.getElementById(callbackName);
                 if (scriptEl) scriptEl.remove();
-                callbackErrore("Timeout server Google.");
+                callbackErrore("Connessione assente o rallentata. Riprovare.");
             }, 8000);
 
             window[callbackName] = function(data) {
@@ -101,7 +160,7 @@
             script.src = `${googleScriptUrl}?${queryParams.toString()}`;
             script.onerror = function() {
                 clearTimeout(timeoutTimer);
-                callbackErrore("Errore di rete.");
+                callbackErrore("Errore di rete nell'allineamento dati.");
                 delete window[callbackName];
                 if(document.getElementById(callbackName)) document.getElementById(callbackName).remove();
             };
@@ -110,12 +169,13 @@
 
         function verificaLicenza() {
             if (!businessId) {
-                document.getElementById('status-text').innerText = "Attesa dati da Lightspeed...";
+                document.getElementById('status-text').innerText = "Attesa dati terminale POS...";
                 return;
             }
             document.getElementById('btn-check').disabled = true;
             document.getElementById('loader-lock').style.display = 'block';
-            document.getElementById('status-text').innerText = "Verifica licenza aziendale...";
+            document.getElementById('status-text').innerText = "Controllo stato licenza cassa...";
+            nascondiBannerErrore();
 
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
@@ -125,20 +185,19 @@
                     document.getElementById('status-text').innerText = "";
                     
                     if (data.status === 'ATTIVO') {
-                        // Rimuove la classe di blocco: sblocca l'interfaccia e mostra il 3CX
                         document.body.classList.remove('licenza-bloccata');
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                     } else {
                         document.body.classList.add('licenza-bloccata');
-                        alert("❌ Servizio non attivo o scaduto per l'ID cliente passato dal POS.");
+                        mostraBannerErrore("❌ Servizio Premium Scaduto o Non Attivo per questa cassa.");
                     }
                 },
                 function(messaggioErrore) {
                     document.getElementById('btn-check').disabled = false;
                     document.getElementById('loader-lock').style.display = 'none';
                     document.getElementById('status-text').innerText = "";
-                    alert("⚠️ Errore: " + messaggioErrore);
+                    mostraBannerErrore("⚠️ " + messaggioErrore);
                 }
             );
         }
@@ -157,14 +216,14 @@
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
                     } else {
-                        alert("Errore Meet.");
+                        mostraBannerErrore("Impossibile avviare il server video in questo momento.");
                         document.getElementById('btn-sos').disabled = false;
                     }
                 },
                 function() {
                     document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
-                    alert("Errore invio SOS.");
+                    mostraBannerErrore("Errore di rete. Impossibile inviare la richiesta.");
                 }
             );
         }
