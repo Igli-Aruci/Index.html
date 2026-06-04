@@ -134,31 +134,35 @@
 
     <script>
         // ========================================================
-        // 📥 ACQUISIZIONE E RIALINEAMENTO TOTALE PARAMETRI
+        // 📥 ACQUISIZIONE PARAMETRI REALI LIGHTSPEED (FILTRO PUNTI ATTIVO)
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
-        const locationId = (urlParams.get('loc') || 'sede').trim(); // Mantenuto numerico per Colonna C Google Sheets
+        const locationId = (urlParams.get('loc') || 'sede').trim(); // Colonna C Google Sheets
         let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
-        let deviceName = (urlParams.get('device') || 'iPad').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Pulizia caratteri speciali residui
-        deviceName = deviceName.replace(/[*#@!$%&.]/g, '').trim();
-        locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
+        // 🛠️ FILTRO: Elimina i punti (.) e i caratteri speciali strani
         userName = userName.replace(/[*#@!$%&.]/g, '').trim();
+        locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
 
-        // 🌟 STRUCT RICHIESTA: NomeDispositivo Spazio BusinessID Spazio NomeSede (SENZA TRATTINI)
-        const stringaVisibileChat = deviceName + ' ' + businessId + ' ' + locationName;
+        const userFormattato = userName.trim();
+        const locationFormattata = locationName.trim(); // Mantiene spazi e maiuscole originali
 
-        // Tracciamento interno anti-congelamento cache del 3CX
-        let deviceHash = 0;
-        for (let i = 0; i < deviceName.length; i++) {
-            deviceHash = (deviceHash << 5) - deviceHash + deviceName.charCodeAt(i);
-            deviceHash |= 0;
+        // Togliamo gli spazi SOLO dal nome operatore per compattarlo
+        const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
+
+        // 🌟 STRUCT RICHIESTA: NomeUtente Spazio BusinessID Spazio NomeSede (DIVISI DA SPAZIO SINGOLO)
+        const stringaVisibileChat = userSenzaSpazi + ' ' + businessId + ' ' + locationFormattata;
+
+        // Tracciamento interno anti-cache del 3CX
+        let userHash = 0;
+        for (let i = 0; i < userSenzaSpazi.length; i++) {
+            userHash = (userHash << 5) - userHash + userSenzaSpazi.charCodeAt(i);
+            userHash |= 0;
         }
-        const idUnivocoServer = Math.abs(deviceHash).toString(36).substring(0, 4).toUpperCase();
-        const tracciamentoInterno = deviceName.replace(/\s+/g, '') + '-' + businessId + '-' + locationId + '-' + idUnivocoServer;
+        const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
+        const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationFormattata.replace(/\s+/g, '') + '-' + locationId + '-' + idUnivocoServer;
 
         if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
             localStorage.setItem('current_3cx_session_user', tracciamentoInterno);
@@ -238,7 +242,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userName;
+        document.getElementById('display-user').innerText = userFormattato;
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -274,7 +278,6 @@
             document.body.appendChild(script);
         }
 
-        // 🔐 BLINDATO: Invia a Google Sheets il 'locationId' numerico originale per fare match perfetto sulla Colonna C
         function verificaLicenza(mostraLoaderPulsante = false) {
             if (!navigator.onLine || !businessId || staVerificando) return;
             staVerificando = true;
@@ -384,10 +387,10 @@
                     document.getElementById('btn-sos').innerText = trad.actSos;
                     document.getElementById('qr-result').style.display = 'none';
                 } else {
-                    const minuti = Math.floor(tempoRimanente / (1000 * 60));
-                    const secondi = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
+                    const minutes = Math.floor(tempoRimanente / (1000 * 60));
+                    const seconds = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
                     document.getElementById('btn-sos').disabled = true;
-                    document.getElementById('btn-sos').innerText = `${trad.sosSent} (${minuti}m ${secondi}s)`;
+                    document.getElementById('btn-sos').innerText = `${trad.sosSent} (${minutes}m ${seconds}s)`;
                 }
             }
             aggiornaTimer();
