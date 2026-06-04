@@ -7,7 +7,7 @@
     
     <script>
         // ==========================================
-        // 📡 INTERCETTAZIONE AUTOMATICA WEBSOCKET & DING
+        // 📡 INTERCETTAZIONE AUTOMATICA WEBSOCKET & MEET
         // ==========================================
         (function() {
             const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
@@ -133,9 +133,9 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
-        // ==========================================
-        // 📥 GESTIONE DATI ORIGINALE BLINDATA AL 100%
-        // ==========================================
+        // ========================================================
+        // 📥 GESTIONE 3CX INTEGRALE DAL FILE VECCHIO (LIGHTSPEED)
+        // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = urlParams.get('id') || '12345';
         let locationName = urlParams.get('loc') || 'sede';
@@ -153,6 +153,7 @@
             widget.setAttribute('visitor-name', datoCompleto);
             widget.setAttribute('default-user-name', datoCompleto);
         }
+        // ========================================================
 
         // ==========================================
         // 🌐 TRADUZIONI E CONFIGURAZIONE INTERFACCIA
@@ -259,7 +260,6 @@
                 document.getElementById('btn-check').disabled = true;
                 document.getElementById('loader-lock').style.display = 'block';
             }
-            // Usa locationFormattata per allinearsi correttamente al controllo Google
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationFormattata, action: 'check' },
                 function(data) {
@@ -330,7 +330,7 @@
             document.getElementById('direct-meet-link').href = url;
             document.getElementById('qr-result').style.display = 'block';
             
-            // 🔊 RIPRODUZIONE AUDIO ORIGINALE (IL DING)
+            // Audio di notifica (Ding) nativo
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
@@ -387,7 +387,6 @@
             }
         }
 
-        // Ascoltatore evento websocket originale integrato per mostrare il QR code
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
 
         window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
