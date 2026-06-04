@@ -108,7 +108,7 @@
     <div id="view-lock" class="container" style="display: none;">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
-        <p id="text-lock-desc">Per utilizzare la function di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
+        <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
         <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
         <button id="btn-check" onclick="verificaLicenza(true)" class="verify-btn">🔄 Ho già pagato, verifica</button>
         <div id="loader-lock" class="spinner"></div>
@@ -140,7 +140,6 @@
         const businessId = urlParams.get('id') || '12345';
         const locationId = urlParams.get('loc') || 'sede';
         
-        // Legge primariamente il nome testuale del negozio (loc_name), altrimenti fa fallback su loc
         let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'sede';
         let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
@@ -151,15 +150,19 @@
         const userFormattato = userName.trim(); 
         const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
 
-        // 🛑 FIX CACHE 3CX: Forza la distruzione del vecchio localstorage se l'utente cambia
+        // 🛑 ULTRA-RESET CACHE 3CX (Risolve il blocco del nome "Davide")
         if (localStorage.getItem('current_3cx_user') !== datoCompleto) {
             localStorage.setItem('current_3cx_user', datoCompleto);
-            // Puliamo i token di sessione del widget 3CX per forzare il refresh del nome
+            // Pulisce tutti i vecchi identificativi memorizzati dal widget 3CX
             for (let key in localStorage) {
-                if (key.startsWith('tcx-') || key.includes('3cx')) {
+                if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus')) {
                     localStorage.removeItem(key);
                 }
             }
+            // Svuota anche i cookie di sessione per sicurezza
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
         }
 
         const widget = document.getElementById('widget-3cx');
@@ -274,7 +277,6 @@
                 document.getElementById('btn-check').disabled = true;
                 document.getElementById('loader-lock').style.display = 'block';
             }
-            // Mantiene l'allineamento sul codice locationId per il foglio Google licenze
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
                 function(data) {
@@ -310,7 +312,6 @@
             );
         }
 
-        function BlacklistLoopControllo() {}
         function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
 
         function richiediSos() {
@@ -357,7 +358,7 @@
                         osc.frequency.setValueAtTime(frequenza, inizio);
                         gain.gain.setValueAtTime(0.5, inizio);
                         gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
-                        osc.start(inizio); osc.stop(inizio + durata);
+                        osc.start(inizio); osc.stop(inizio + duration);
                     }
                     const adesso = ctx.currentTime;
                     riproduciTono(880, adesso, 0.3);         
