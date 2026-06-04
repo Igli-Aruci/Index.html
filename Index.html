@@ -20,7 +20,7 @@
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin 0.4s ease, max-width 0.4s ease;
         }
 
-        /* 🚀 FORZATURA STRUTTURALE IPAD: SCHEDA ASSISTENZA ALTA ("SOPRA SOPRA") A SINISTRA */
+        /* 🚀 LAYOUT IPAD: SCHEDA ASSISTENZA ALTA A SINISTRA */
         @media screen and (min-width: 768px) and (orientation: landscape) {
             body.licenza-attiva {
                 display: block !important; 
@@ -28,8 +28,8 @@
             body.licenza-attiva #view-active {
                 max-width: 380px; 
                 position: absolute;
-                top: 40px;        /* Spinto millimetricamente verso l'alto vicino al bordo della barra */
-                left: 8vw;        /* Mantiene l'allineamento pulito a sinistra */
+                top: 40px;        
+                left: 8vw;        
                 transform: none;  
                 margin: 0;
             }
@@ -46,6 +46,10 @@
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
         
+        /* 🟢 NUOVO PULSANTE DIRETTO MEET (SOTTO IL QR) */
+        .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 14px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: background 0.2s; }
+        .direct-meet-btn:hover { background: #059669; }
+
         /* Spinner */
         .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; display: none; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
@@ -55,10 +59,10 @@
         #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
 
-        /* Area Codici QR */
+        /* Area Codici QR e Risultato */
         #qr-result { margin-top: 25px; display: none; }
-        .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
-        #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
+        .testo-scansione { font-size: 16px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
+        #qr-image { width: 180px; height: 180px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
 
         /* Banner Notifica */
         .wifi-alert-banner { position: absolute; top: -60px; left: 0; right: 0; background-color: #ef4444; color: white; text-align: center; padding: 12px 20px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -110,16 +114,17 @@
         <p>Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.</p>
         <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
         <div id="loader-sos" class="spinner"></div>
+        
         <div id="qr-result">
-            <div class="testo-scansione">📱 Scansiona il QR Code</div>
+            <div class="testo-scansione">📱 Scansiona il QR Code o entra da qui</div>
             <img id="qr-image" src="" alt="QR Code">
+            <a id="direct-meet-link" href="#" target="_blank" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
         </div>
     </div>
 
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
-        // Sostituisci questa URL con la nuova URL della Web App generata se hai rifatto il deploy
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -228,8 +233,14 @@
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
+                        // 1. Assegna l'URL al QR Code per chi scansiona da fuori
                         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.url)}`;
                         document.getElementById('qr-image').src = qrUrl;
+                        
+                        // 2. Aggiorna il link del NUOVO pulsante per l'accesso diretto dall'iPad
+                        document.getElementById('direct-meet-link').href = data.url;
+                        
+                        // Mostra l'area dei risultati sbloccati
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
                     } else {
