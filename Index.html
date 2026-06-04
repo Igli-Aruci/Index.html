@@ -79,10 +79,8 @@
     <script>
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        // DINGUISTIC DICTIONARY (Rilevamento Lingua)
-        const userLang = (navigator.language || navigator.userLanguage || 'it').nodeId || 'it';
+        const userLang = (navigator.language || navigator.userLanguage || 'it');
         const isEn = !userLang.startsWith('it');
-
         const linguaModello = isEn ? 'en' : 'it';
 
         const dizionario = {
@@ -128,7 +126,6 @@
 
         const trad = dizionario[linguaModello];
 
-        // Applica le traduzioni stabili all'avvio
         document.getElementById('text-loading').innerText = trad.loading;
         document.getElementById('text-lock-title').innerText = trad.lockTitle;
         document.getElementById('text-lock-desc').innerText = trad.lockDesc;
@@ -153,6 +150,7 @@
 
         document.getElementById('display-user').innerText = userName;
 
+        // 🛠️ RISOLUZIONE: Usiamo la variabile dinamica userName anziché il vecchio testo fisso
         const datoCompleto3CX = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
         const widget3cxElement = document.getElementById('widget-3cx');
         if (widget3cxElement) {
@@ -238,7 +236,6 @@
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
             
-            // Passiamo anche il parametro "lang" a Google per farlo sapere a Telegram!
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'sos', lang: linguaModello },
                 function(data) {
