@@ -1,784 +1,461 @@
-// =========================================================================
-// CONFIGURAZIONE GLOBALE (CON I TUOI DATI REALI)
-// =========================================================================
-const SPREADSHEET_ID = "1PfYLOsbMLZbaqQjUp4mwg3mDmvoVOdeDodY1SeDMmOg"; 
-const NOME_SCHEDA = "servizio blocco clienti"; 
-const TELEGRAM_BOT_TOKEN = "8806342041:AAEtCFJ1QbIAyjicJg1c1oRyIV1vSIXLrjw";
-const TELEGRAM_CHAT_ID = "-5244950733"; 
-const CALENDAR_ID = "primary"; 
-const PROMEMORIA_MINUTI_PRESA_IN_CARICO = 3;
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supporto POS / POS Support</title>
 
-function getConfig_() {
-  var props = PropertiesService.getScriptProperties();
-  return {
-    spreadsheetId: props.getProperty("SPREADSHEET_ID") || SPREADSHEET_ID,
-    sheetName: props.getProperty("NOME_SCHEDA") || NOME_SCHEDA,
-    telegramBotToken: props.getProperty("TELEGRAM_BOT_TOKEN") || TELEGRAM_BOT_TOKEN,
-    telegramChatId: props.getProperty("TELEGRAM_CHAT_ID") || TELEGRAM_CHAT_ID,
-    calendarId: props.getProperty("CALENDAR_ID") || CALENDAR_ID,
-    apiKey: props.getProperty("API_KEY") || ""
-  };
-}
+    <script>
+        (function() {
+            const injectedUrl = "<?!= googleScriptUrl ?>";
+            if (injectedUrl && injectedUrl.indexOf("<?") === -1) {
+                window.GOOGLE_SCRIPT_URL = injectedUrl;
+            }
+            const injectedKey = "<?!= apiKey ?>";
+            if (injectedKey && injectedKey.indexOf("<?") === -1) {
+                window.GOOGLE_API_KEY = injectedKey;
+            }
+        })();
+    </script>
+    
+    <script>
+        // ========================================================
+        // 📡 INTERCETTAZIONE AUTOMATICA WEBSOCKET DAL FILE VECCHIO
+        // ========================================================
+        (function() {
+            const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
 
-// =========================================================================
-// 🌐 1. GESTIONE RICHIESTE IPAD / WEB (doGet)
-// =========================================================================
-function doGet(e) {
-  if (!e || !e.parameter || !e.parameter.action) {
-    var template = HtmlService.createTemplateFromFile("index");
-    template.googleScriptUrl = ScriptApp.getService().getUrl();
-    template.apiKey = getConfig_().apiKey || "";
-    return template.evaluate().setTitle("Supporto POS / POS Support");
-  }
+            function catturaLink(link) {
+                window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
+            }
 
-  var callback = e.parameter.callback;
-  var action = e.parameter.action;
-  
-  var businessId = e.parameter.id ? e.parameter.id.toString().trim() : "";
-  var locationId = e.parameter.loc ? e.parameter.loc.toString().trim() : "";
-  var locationName = e.parameter.loc_name ? e.parameter.loc_name.trim() : "Sede Sconosciuta";
+            const OrigWebSocket = window.WebSocket;
+            window.WebSocket = function(url, protocols) {
+                const ws = new OrigWebSocket(url, protocols);
+                ws.addEventListener('message', async function(e) {
+                    try {
+                        let msg = "";
+                        if (typeof e.data === 'string') msg = e.data;
+                        else if (e.data instanceof Blob) msg = await e.data.text();
+                        else if (e.data instanceof ArrayBuffer) msg = new TextDecoder().decode(e.data);
+                        else msg = JSON.stringify(e.data);
+                        
+                        const match = msg.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    } catch(err) {}
+                });
+                return ws;
+            };
 
-  var rigaTrovata = -1;
-  var config = getConfig_();
-  if (config.apiKey) {
-    var providedKey = e.parameter.key ? e.parameter.key.toString().trim() : "";
-    if (providedKey !== config.apiKey) {
-      return rendereJsonp(callback, { status: "ERRORE", messaggio: "Non autorizzato" });
-    }
-  }
+            const origFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const response = await origFetch.apply(this, args);
+                try {
+                    const clone = response.clone();
+                    clone.text().then(text => {
+                        const match = text.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    }).catch(e=>{});
+                } catch(err) {}
+                return response;
+            };
 
-  if (action === "ticket_status" || action === "ticket") {
-    var token = e.parameter.token ? e.parameter.token.toString().trim() : "";
-    if (!token) {
-      return rendereJsonp(callback, { status: "ERRORE", messaggio: "Token mancante" });
-    }
-    var ticket = leggiTicketCache_(token);
-    if (!ticket) {
-      return rendereJsonp(callback, { status: "NON_TROVATO" });
-    }
-    return rendereJsonp(callback, {
-      status: ticket.status || "OPEN",
-      assignedTo: ticket.assignedTo || "",
-      closedBy: ticket.closedBy || ""
-    });
-  }
+            const origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function() {
+                this.addEventListener('load', function() {
+                    try {
+                        const match = this.responseText.match(regexMeet);
+                        if (match) catturaLink(match[0]);
+                    } catch(err) {}
+                });
+                origOpen.apply(this, arguments);
+            };
+        })();
+    </script>
 
-  var outputDati = { status: "NON_ATTIVO", giorni: 0, url: "", ticket: "" };
+    <style>
+        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; width: 100%; overflow-x: hidden; }
+        .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 90%; max-width: 420px; text-align: center; z-index: 1; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin 0.4s ease, max-width 0.4s ease; }
+        @media screen and (min-width: 768px) and (orientation: landscape) { body.licenza-attiva { display: block !important; } body.licenza-attiva #view-active { max-width: 380px; position: absolute; top: 50px; left: 8vw; transform: none; margin: 0; } }
+        .brand-logo { max-width: 200px; height: auto; margin: 0 auto 20px auto; display: block; }
+        h2 { color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
+        .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+        p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
+        .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
+        .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
+        .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+        .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .sos-btn:disabled { background: #cbd5e1; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
+        .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; display: none; }
+        #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
+        #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
+        #qr-result { margin-top: 25px; display: none; }
+        .testo-scansione { font-size: 15px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
+        #qr-image { width: 160px; height: 160px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
+        .wifi-alert-banner { position: fixed; top: -70px; left: 0; right: 0; text-align: center; padding: 14px 20px; font-size: 14px; font-weight: 600; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 99999; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .wifi-alert-banner.mostra { top: 0; }
+        .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
+        .banner-rosso { background-color: #ef4444; }
+        .banner-arancione { background-color: #f97316; }
+        #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"], div[id^="tcx-"] { display: none !important; visibility: hidden !important; }
+        body.licenza-attiva #widget-3cx, body.licenza-attiva call-us-selector, body.licenza-attiva .tcx-callus-button, body.licenza-attiva iframe[title*="3CX"], body.licenza-attiva div[id^="tcx-"] { display: block !important; visibility: visible !important; }
+    </style>
+</head>
+<body>
 
-  if (!businessId) {
-    return rendereJsonp(callback, { status: "ERRORE", messaggio: "ID mancante" });
-  }
+    <div id="error-banner" class="wifi-alert-banner banner-rosso">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <span id="error-banner-message">...</span>
+    </div>
 
-  var sheet = SpreadsheetApp.openById(config.spreadsheetId).getSheetByName(config.sheetName);
-  if (!sheet) {
-    return rendereJsonp(callback, { status: "ERRORE", messaggio: "Scheda non trovata" });
-  }
-  
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    return rendereJsonp(callback, outputDati);
-  }
-  var dati = sheet.getRange(1, 1, lastRow, 9).getValues();
+    <div id="view-loading" class="container">
+        <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
+        <div class="spinner"></div>
+        <p id="text-loading">Attendere per favore.</p>
+    </div>
 
-  for (var i = 1; i < dati.length; i++) {
-    var foglioBusinessId = dati[i][1] ? dati[i][1].toString().trim() : "";
-    var foglioLocationId = dati[i][2] ? dati[i][2].toString().trim() : "";
+    <div id="view-lock" class="container" style="display: none;">
+        <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
+        <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
+        <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
+        <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
+        <button id="btn-check" onclick="verificaLicenza(true)" class="verify-btn">🔄 Ho già pagato, verifica</button>
+        <div id="loader-lock" class="spinner"></div>
+        <div id="status-text"></div>
+    </div>
 
-    if (foglioBusinessId.toLowerCase() === businessId.toLowerCase() && foglioLocationId.toLowerCase() === locationId.toLowerCase()) {
-      rigaTrovata = i + 1;
-      break;
-    }
-  }
-
-  if (rigaTrovata === -1) {
-    for (var i = 1; i < dati.length; i++) {
-      var foglioBusinessId = dati[i][1] ? dati[i][1].toString().trim() : "";
-      if (foglioBusinessId.toLowerCase() === businessId.toLowerCase()) {
-        rigaTrovata = i + 1;
-        break;
-      }
-    }
-  }
-
-  if (rigaTrovata !== -1) {
-    var expiryDateRaw = dati[rigaTrovata - 1][8]; 
-    var calcolaStato = "NON_ATTIVO";
-    var giorniRimanenti = 0;
-
-    if (expiryDateRaw) {
-      var expiryDate = new Date(expiryDateRaw);
-      var today = new Date();
-      today.setHours(0,0,0,0);
-      expiryDate.setHours(0,0,0,0);
-
-      if (!isNaN(expiryDate.getTime()) && expiryDate >= today) {
-        calcolaStato = "ATTIVO";
-        var timeDiff = expiryDate.getTime() - today.getTime();
-        giorniRimanenti = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    <div id="view-active" class="container" style="display: none;">
+        <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
+        <h2 id="text-act-title">Assistenza SOS</h2>
+        <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span></div>
+        <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.</p>
+        <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
+        <div id="loader-sos" class="spinner"></div>
         
-        if (giorniRimanenti <= 7) {
-          outputDati.status = "AVVISO_SCADENZA";
-          outputDati.giorni = giorniRimanenti;
-        } else {
-          outputDati.status = "ATTIVO";
+        <div id="qr-result">
+            <div class="testo-scansione" id="text-act-scan">📱 Scansiona o clicca sotto per entrare</div>
+            <img id="qr-image" src="" alt="QR Code">
+            <a id="direct-meet-link" href="#" target="_blank" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
+        </div>
+    </div>
+
+    <div id="container-widget-3cx"></div>
+
+    <script>
+        // ========================================================
+        // 📥 ACQUISIZIONE PARAMETRI REALI LIGHTSPEED
+        // ========================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessId = (urlParams.get('id') || '12345').trim();
+        const locationId = (urlParams.get('loc') || 'sede').trim(); 
+        let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
+        let userName = (urlParams.get('user') || 'Utente').trim();
+
+        userName = userName.replace(/[*#@!$%&.]/g, '').trim();
+        locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
+
+        const userFormattato = userName.trim();
+        const locationFormattata = locationName.trim(); 
+
+        const userSenzaSpazi = userFormattato.replace(/\s+/g, '');
+
+        const stringaVisibileChat = userSenzaSpazi + ' ' + businessId + ' ' + locationFormattata;
+
+        let userHash = 0;
+        for (let i = 0; i < userSenzaSpazi.length; i++) {
+            userHash = (userHash << 5) - userHash + userSenzaSpazi.charCodeAt(i);
+            userHash |= 0;
         }
-      }
-    }
+        const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
+        const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationFormattata.replace(/\s+/g, '') + '-' + locationId + '-' + idUnivocoServer;
 
-    var cellaStatoJ = sheet.getRange(rigaTrovata, 10);
-    var valoreStato = (calcolaStato === "ATTIVO") ? "ATTIVO" : "NON ATTIVO";
-    var valoreAttuale = cellaStatoJ.getValue();
-    if (valoreAttuale !== valoreStato) {
-      cellaStatoJ.setValue(valoreStato);
-    }
-    if (calcolaStato !== "ATTIVO") {
-      outputDati.status = "NON_ATTIVO";
-    }
-    
-    var rawLocationName = dati[rigaTrovata - 1][0] || locationName;
-    var searchBusinessId = dati[rigaTrovata - 1][1] || businessId;
-  } else {
-    outputDati.status = "NON_ATTIVO";
-    var rawLocationName = locationName;
-    var searchBusinessId = businessId;
-  }
-
-  if (action === "check") {
-    return rendereJsonp(callback, outputDati);
-  }
-
-  if (action === "sos") {
-    if (outputDati.status === "ATTIVO" || outputDati.status === "AVVISO_SCADENZA") {
-      
-      var nomeSedePulito = rawLocationName.toString()
-        .replace(/NO RIVAL SRL/gi, "") 
-        .replace(/[^a-zA-Z0-9\s]/g, "") 
-        .replace(/\s+/g, " ") 
-        .trim();
-
-      if (!nomeSedePulito) { nomeSedePulito = "Sede Assistenza"; }
-
-      var titoloCalendario = "#" + searchBusinessId + " @ " + nomeSedePulito + " - Blocco Servizio";
-      var dataOraAperturaStr = Utilities.formatDate(new Date(), "Europe/Rome", "dd/MM/yyyy - HH:mm:ss");
-      
-      var descrizioneContenuto = "📌 DETTAGLI RICHIESTA ASSISTENZA\n" +
-                                 "───────────────────────\n" +
-                                 "🏢 Sede: " + nomeSedePulito + "\n" +
-                                 "🆔 ID Business: " + searchBusinessId + "\n" +
-                                 "📍 ID Location: " + (locationId || "Non specificato");
-
-      var meetUrl = ""; 
-      var eventId = "sos_" + new Date().getTime();
-
-      var lock = LockService.getScriptLock();
-      var locked = lock.tryLock(8000);
-      try {
-        var dataInizio = new Date();
-        var dataFine = new Date(dataInizio.getTime() + (30 * 60 * 1000)); 
-        var descrizioneCalendario = descrizioneContenuto + "\n🚨 Stato Ticket: 🔴 IN ATTESA DI ASSEGNAZIONE\n👤 Tecnico: nessuno";
-        var creazione = creaEventoCalendarioConMeet_(config.calendarId, titoloCalendario, dataInizio, dataFine, descrizioneCalendario);
-        if (creazione && creazione.eventId) {
-          eventId = creazione.eventId;
+        if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
+            localStorage.setItem('current_3cx_session_user', tracciamentoInterno);
+            for (let key in localStorage) {
+                if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus') || key.startsWith('3cx-')) {
+                    localStorage.removeItem(key);
+                }
+            }
         }
-        if (creazione && creazione.meetUrl) {
-          meetUrl = creazione.meetUrl;
-        }
-      } catch (errCalendar) {
-        Logger.log("Errore controllato Calendario: " + errCalendar.toString());
-      } finally {
-        if (locked) {
-          lock.releaseLock();
-        }
-      }
 
-      // Se Google è lento e non ha ancora scritto il link, usiamo un fallback valido
-      if (!meetUrl) { meetUrl = "https://meet.google.com/new"; }
-      outputDati.url = meetUrl;
+        const containerWidget = document.getElementById('container-widget-3cx');
+        const selector3cx = document.createElement('call-us-selector');
+        selector3cx.setAttribute('id', 'widget-3cx');
+        selector3cx.setAttribute('phonesystem-url', 'https://norival.my3cx.it');
+        selector3cx.setAttribute('party', 'LiveChat385165');
+        selector3cx.setAttribute('visitor-name', stringaVisibileChat);
+        selector3cx.setAttribute('default-user-name', stringaVisibileChat);
+        containerWidget.appendChild(selector3cx);
+        // ========================================================
 
-      // 📩 2. INVIO NOTIFICA ELEGANTE A TELEGRAM
-      try {
-        ensureTelegramWebhook_();
-        var sedeHtml = escapeTelegramHtml_(nomeSedePulito);
-        var bIdHtml = escapeTelegramHtml_(searchBusinessId);
-        var lIdHtml = escapeTelegramHtml_(locationId || "Non specificato");
-        var testoTelegram = "📌 <b>DETTAGLI RICHIESTA ASSISTENZA</b>\n" +
-                            "───────────────────────\n" +
-                            "🏢 <b>Sede:</b> " + sedeHtml + "\n" +
-                            "🆔 <b>ID Business:</b> " + bIdHtml + "\n" +
-                            "📍 <b>ID Location:</b> " + lIdHtml + "\n" +
-                            "🚨 <b>Stato Ticket:</b> 🔴 IN ATTESA DI ASSEGNAZIONE\n" +
-                            "👤 <b>Tecnico:</b> nessuno";
+        const googleScriptUrl = window.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        const userLang = (navigator.language || navigator.userLanguage || 'it');
+        const isEn = !userLang.startsWith('it');
+        const linguaModello = isEn ? 'en' : 'it';
 
-        var ticketObj = {
-          eventId: eventId,
-          businessId: searchBusinessId,
-          locationId: locationId || "0",
-          dataApertura: dataOraAperturaStr,
-          meetUrl: meetUrl,
-          sede: nomeSedePulito,
-          chatId: config.telegramChatId,
-          createdAt: Date.now(),
-          status: "OPEN",
-          assignedTo: "",
-          assignedAt: 0,
-          closedBy: "",
-          closedAt: 0,
-          reminderSent: false
+        const dizionario = {
+            it: {
+                loading: "Attendere per favore.", 
+                lockTitle: "Servizio Premium Non Attivo",
+                lockDesc: "Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.",
+                lockLink: "💳 Sblocca Servizio",
+                lockVerify: "🔄 Ho già pagato, verifica",
+                actTitle: "Assistenza SOS",
+                actWelcome: "Benvenuto",
+                actDesc: "Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.",
+                actSos: "🚨 Richiedi Videoassistenza",
+                actScan: "📱 Scansiona o clicca sotto per entrare",
+                actMeetBtn: "🟢 ENTRA IN VIDEOCHIAMATA",
+                sosSent: "🚨 SOS INVIATO",
+                errWifi: "⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.",
+                errMeet: "Errore server creazione Meet.",
+                errConn: "Errore di connessione durante la richiesta SOS.",
+                licExpired: "❌ Servizio Premium Scaduto o Non Attivo per questa cassa.",
+                licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale"
+            },
+            en: {
+                loading: "Please wait.",
+                lockTitle: "Premium Service Not Active",
+                lockDesc: "To use the SOS Service Block feature and receive immediate video assistance at checkout, please activate the Premium plan.",
+                lockLink: "💳 Unlock Service",
+                lockVerify: "🔄 Already paid, verify",
+                actTitle: "SOS Assistance",
+                actWelcome: "Welcome",
+                actDesc: "We are at your disposal. Click to start an immediate video call or use the chat in the bottom right corner.",
+                actSos: "🚨 Request Video Assistance",
+                actScan: "📱 Scan or click below to join",
+                actMeetBtn: "🟢 JOIN VIDEO CALL",
+                sosSent: "🚨 SOS SENT",
+                errWifi: "⚠️ No Internet Connection. Please check the iPad Wi-Fi.",
+                errMeet: "Server error during Meet creation.",
+                errConn: "Connection error during SOS request.",
+                licExpired: "❌ Premium Service Expired or Not Active for this checkout.",
+                licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support"
+            }
         };
-        var ticketToken = salvaTicketCache_(ticketObj);
-        outputDati.ticket = ticketToken;
-        var callbackDataPresaInCarico = "p_" + ticketToken;
 
-        var payload = {
-          "chat_id": config.telegramChatId,
-          "text": testoTelegram,
-          "parse_mode": "HTML",
-          "reply_markup": JSON.stringify({
-            inline_keyboard: [
-              [{ "text": "🟢 ENTRA IN CHIAMATA", "url": meetUrl }],
-              [{ "text": "🙋 Prendi in Carico Intervento", "callback_data": callbackDataPresaInCarico }]
-            ]
-          })
-        };
-        
-        var respInvio = telegramRequest_(config, "sendMessage", payload);
-        if (respInvio && respInvio.ok && respInvio.result) {
-          ticketObj.messageId = respInvio.result.message_id || 0;
-          ticketObj.chatId = (respInvio.result.chat && respInvio.result.chat.id) ? respInvio.result.chat.id : config.telegramChatId;
-          scriviTicketCache_(ticketToken, ticketObj);
+        const trad = dizionario[linguaModello];
+
+        document.getElementById('text-loading').innerText = trad.loading;
+        document.getElementById('text-lock-title').innerText = trad.lockTitle;
+        document.getElementById('text-lock-desc').innerText = trad.lockDesc;
+        document.getElementById('text-lock-link').innerText = trad.lockLink;
+        document.getElementById('btn-check').innerText = trad.lockVerify;
+        document.getElementById('text-act-title').innerText = trad.actTitle;
+        document.getElementById('text-act-welcome').innerText = trad.actWelcome;
+        document.getElementById('text-act-desc').innerText = trad.actDesc;
+        document.getElementById('btn-sos').innerText = trad.actSos;
+        document.getElementById('text-act-scan').innerText = trad.actScan;
+        document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
+        document.getElementById('display-user').innerText = userFormattato;
+
+        let controlloAutomaticoTimer = null;
+        let staVerificando = false;
+        let contoRovesciaTimer = null;
+
+        function mostraBanner(testo, tipo) {
+            const banner = document.getElementById('error-banner');
+            banner.className = "wifi-alert-banner " + (tipo === 'rosso' ? 'banner-rosso' : 'banner-arancione');
+            document.getElementById('error-banner-message').innerText = testo;
+            banner.classList.add('mostra');
         }
 
-        pianificaPromemoriaPresaInCarico_(ticketToken, ticketObj.createdAt + (PROMEMORIA_MINUTI_PRESA_IN_CARICO * 60 * 1000));
-      } catch (errTelegram) {
-        Logger.log("Errore Telegram: " + errTelegram.toString());
-      }
-    }
-    return rendereJsonp(callback, outputDati);
-  }
+        function nascondiBanner() { document.getElementById('error-banner').classList.remove('mostra'); }
 
-  return rendereJsonp(callback, { status: "ERRORE", messaggio: "Azione negata" });
-}
+        window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
+        window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
 
-// =========================================================================
-// 🙋 2. GESTIONE PULSANTI INTERATTIVI TELEGRAM (doPost)
-// =========================================================================
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  var locked = false;
-  try {
-    var config = getConfig_();
-    locked = lock.tryLock(800);
-    var update = JSON.parse(e.postData.contents);
-    if (!update.callback_query) {
-      return ContentService.createTextOutput(JSON.stringify({result: "ignored"})).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var callbackQuery = update.callback_query;
-    var dataParam = callbackQuery.data; 
-    var message = callbackQuery.message;
-    var inlineMessageId = callbackQuery.inline_message_id || "";
-    var messageId = message ? message.message_id : null;
-    var targetChatId = (message && message.chat && message.chat.id) ? message.chat.id : config.telegramChatId;
-    
-    var tecnicoNome = callbackQuery.from.first_name || "Tecnico";
-    if (callbackQuery.from.last_name) { tecnicoNome += " " + callbackQuery.from.last_name; }
-    var tecnicoUsername = callbackQuery.from.username ? ("@" + callbackQuery.from.username) : "";
-    var tecnicoEtichetta = tecnicoUsername || tecnicoNome;
-    
-    var testoOriginale = (message && message.text) ? message.text : "";
-    var nomeSedeEstratto = estraiNomeSedeDaTesto_(testoOriginale) || "Sconosciuta";
-
-    if (!locked) {
-      telegramRequest_(config, "answerCallbackQuery", { "callback_query_id": callbackQuery.id, "text": "Operazione in corso..." });
-      return ContentService.createTextOutput(JSON.stringify({result: "busy"})).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // 🙋 AZIONE: PRENDI IN CARICO INTERVENTO
-    if (dataParam.startsWith("p_")) {
-      if (testoOriginale.indexOf("PRESO IN CARICO") !== -1) {
-        telegramRequest_(config, "answerCallbackQuery", { "callback_query_id": callbackQuery.id, "text": "Già preso in carico" });
-        return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
-      }
-      telegramRequest_(config, "answerCallbackQuery", { "callback_query_id": callbackQuery.id });
-
-      var datiTicket = estraiTicketDaCallback_(dataParam);
-      var eventId = datiTicket.eventId || "sos_" + new Date().getTime();
-      var bId = datiTicket.businessId || "Non specificato";
-      var lId = (datiTicket.locationId && datiTicket.locationId !== "0") ? datiTicket.locationId : "Non specificato";
-      var dataApertura = datiTicket.dataApertura || Utilities.formatDate(new Date(), "Europe/Rome", "dd/MM/yyyy - HH:mm:ss");
-      var meetUrl = datiTicket.meetUrl || "https://meet.google.com/new";
-      var token = datiTicket.token || dataParam.substring(2);
-      var tecnicoHtml = escapeTelegramHtml_(tecnicoEtichetta);
-      var sedeHtml2 = escapeTelegramHtml_(nomeSedeEstratto);
-      var bIdHtml2 = escapeTelegramHtml_(bId);
-      var lIdHtml2 = escapeTelegramHtml_(lId);
-
-      var testoPresoInCarico = "📌 <b>DETTAGLI RICHIESTA ASSISTENZA</b>\n" +
-                               "───────────────────────\n" +
-                               "🏢 <b>Sede:</b> " + sedeHtml2 + "\n" +
-                               "🆔 <b>ID Business:</b> " + bIdHtml2 + "\n" +
-                               "📍 <b>ID Location:</b> " + lIdHtml2 + "\n" +
-                               "🚨 <b>Stato Ticket:</b> 🟡 PRESO IN CARICO DA " + tecnicoHtml + "\n" +
-                               "👤 <b>Tecnico:</b> " + tecnicoHtml;
-
-      try {
-        var descCal = "📌 DETTAGLI RICHIESTA ASSISTENZA\n" +
-                       "───────────────────────\n" +
-                       "🏢 Sede: " + nomeSedeEstratto + "\n" +
-                       "🆔 ID Business: " + bId + "\n" +
-                       "📍 ID Location: " + lId + "\n" +
-                       "🚨 Stato Ticket: 🟡 PRESO IN CARICO DA " + tecnicoEtichetta + "\n" +
-                       "👤 Tecnico: " + tecnicoEtichetta;
-        aggiornaDescrizioneEventoCalendario_(config.calendarId, eventId, descCal);
-      } catch(eCal) { Logger.log("Errore aggiornamento: " + eCal.toString()); }
-
-      var tAgg = leggiTicketCache_(token);
-      if (tAgg) {
-        tAgg.assignedTo = tecnicoEtichetta;
-        tAgg.assignedAt = Date.now();
-        tAgg.status = "ASSIGNED";
-        scriviTicketCache_(token, tAgg);
-      }
-
-      var callbackChiusura = "r_" + token;
-
-      var editPayload = {
-        "text": testoPresoInCarico,
-        "parse_mode": "HTML",
-        "reply_markup": JSON.stringify({
-          inline_keyboard: [
-            [{ "text": "🟢 ENTRA IN CHIAMATA", "url": meetUrl }], 
-            [{ "text": "✅ Chiudi Intervento (Risolto)", "callback_data": callbackChiusura }]
-          ]
-        })
-      };
-      if (inlineMessageId) {
-        editPayload.inline_message_id = inlineMessageId;
-      } else {
-        editPayload.chat_id = targetChatId;
-        editPayload.message_id = messageId;
-      }
-      
-      var respEdit = telegramRequest_(config, "editMessageText", editPayload);
-      if (!(respEdit && (respEdit.ok || isTelegramMessageNotModified_(respEdit)))) {
-        var descr = (respEdit && (respEdit.description || respEdit.error_description)) ? (respEdit.description || respEdit.error_description) : "Errore sconosciuto";
-        Logger.log("Errore editMessageText: " + descr);
-        telegramRequest_(config, "sendMessage", { "chat_id": targetChatId, "text": "⚠️ Errore aggiornamento ticket.", "parse_mode": "HTML" });
-      }
-    }
-    
-    // ✅ AZIONE: CHIUDI INTERVENTO (RISOLTO)
-    if (dataParam.startsWith("r_")) {
-      if (testoOriginale.indexOf("INTERVENTO CHIUSO") !== -1) {
-        telegramRequest_(config, "answerCallbackQuery", { "callback_query_id": callbackQuery.id, "text": "Già chiuso" });
-        return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
-      }
-      telegramRequest_(config, "answerCallbackQuery", { "callback_query_id": callbackQuery.id });
-
-      var datiTicketR = estraiTicketDaCallback_(dataParam);
-      var tokenChiusura = datiTicketR.token || dataParam.substring(2);
-      var eventIdR = datiTicketR.eventId || "sos_" + new Date().getTime();
-      var bIdR = datiTicketR.businessId || "Non specificato";
-      var lIdR = (datiTicketR.locationId && datiTicketR.locationId !== "0") ? datiTicketR.locationId : "Non specificato";
-      var dataAperturaR = datiTicketR.dataApertura || Utilities.formatDate(new Date(), "Europe/Rome", "dd/MM/yyyy - HH:mm:ss");
-      var tecnicoHtmlR = escapeTelegramHtml_(tecnicoEtichetta);
-      var sedeHtmlR = escapeTelegramHtml_(nomeSedeEstratto);
-      var bIdHtmlR = escapeTelegramHtml_(bIdR);
-      var lIdHtmlR = escapeTelegramHtml_(lIdR);
-
-      var testoRisolto = "📌 <b>DETTAGLI RICHIESTA ASSISTENZA</b>\n" +
-                         "───────────────────────\n" +
-                         "🏢 <b>Sede:</b> " + sedeHtmlR + "\n" +
-                         "🆔 <b>ID Business:</b> " + bIdHtmlR + "\n" +
-                         "📍 <b>ID Location:</b> " + lIdHtmlR + "\n" +
-                         "🚨 <b>Stato Ticket:</b> ✅ INTERVENTO CHIUSO\n" +
-                         "👤 <b>Tecnico:</b> " + tecnicoHtmlR;
-
-      try {
-        var descCalFinale = "📌 DETTAGLI RICHIESTA ASSISTENZA\n" +
-                             "───────────────────────\n" +
-                             "🏢 Sede: " + nomeSedeEstratto + "\n" +
-                             "🆔 ID Business: " + bIdR + "\n" +
-                             "📍 ID Location: " + lIdR + "\n" +
-                             "🚨 Stato Ticket: ✅ INTERVENTO CHIUSO\n" +
-                             "👤 Tecnico: " + tecnicoEtichetta;
-        aggiornaDescrizioneEventoCalendario_(config.calendarId, eventIdR, descCalFinale);
-      } catch(eCal) { Logger.log("Errore chiusura: " + eCal.toString()); }
-
-      var tChiudi = leggiTicketCache_(tokenChiusura);
-      if (tChiudi) {
-        tChiudi.closedBy = tecnicoEtichetta;
-        tChiudi.closedAt = Date.now();
-        tChiudi.status = "CLOSED";
-        scriviTicketCache_(tokenChiusura, tChiudi);
-      }
-
-      var finePayload = { 
-        "text": testoRisolto, 
-        "parse_mode": "HTML",
-        "reply_markup": JSON.stringify({ inline_keyboard: [] }) 
-      };
-      if (inlineMessageId) {
-        finePayload.inline_message_id = inlineMessageId;
-      } else {
-        finePayload.chat_id = targetChatId;
-        finePayload.message_id = messageId;
-      }
-      
-      var respFinale = telegramRequest_(config, "editMessageText", finePayload);
-      if (!(respFinale && (respFinale.ok || isTelegramMessageNotModified_(respFinale)))) {
-        var descrChiusura = (respFinale && (respFinale.description || respFinale.error_description)) ? (respFinale.description || respFinale.error_description) : "Errore sconosciuto";
-        Logger.log("Errore chiusura editMessageText: " + descrChiusura);
-
-        var payloadMarkup = { "reply_markup": JSON.stringify({ inline_keyboard: [] }) };
-        if (inlineMessageId) {
-          payloadMarkup.inline_message_id = inlineMessageId;
-        } else {
-          payloadMarkup.chat_id = targetChatId;
-          payloadMarkup.message_id = messageId;
+        function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
+            if (!navigator.onLine) { callbackErrore("Offline"); return; }
+            const callbackName = 'handler_' + Math.round(100000 * Math.random());
+            const timeoutTimer = setTimeout(() => {
+                delete window[callbackName];
+                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
+                callbackErrore("Timeout");
+            }, 15000);
+            window[callbackName] = function(data) { clearTimeout(timeoutTimer); callbackSuccesso(data); delete window[callbackName]; if (document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            const queryParams = new URLSearchParams(parametri);
+            if (window.GOOGLE_API_KEY) queryParams.append('key', window.GOOGLE_API_KEY);
+            queryParams.append('callback', callbackName);
+            const script = document.createElement('script');
+            script.id = callbackName;
+            script.src = `${googleScriptUrl}?${queryParams.toString()}`;
+            script.onerror = function() { clearTimeout(timeoutTimer); callbackErrore("Error"); delete window[callbackName]; if(document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            document.body.appendChild(script);
         }
-        telegramRequest_(config, "editMessageReplyMarkup", payloadMarkup);
-        telegramRequest_(config, "sendMessage", { "chat_id": targetChatId, "text": "⚠️ Errore chiusura ticket.", "parse_mode": "HTML" });
-      }
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({result: "error", details: err.toString()})).setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    if (locked) {
-      lock.releaseLock();
-    }
-  }
-}
 
-function rendereJsonp(callback, oggettoDati) {
-  var stringaJson = JSON.stringify(oggettoDati);
-  var cb = (callback && isValidJsonpCallback_(callback)) ? callback : "";
-  var outputFinale = cb ? cb + "(" + stringaJson + ");" : stringaJson;
-  return ContentService.createTextOutput(outputFinale).setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
-}
+        function verificaLicenza(mostraLoaderPulsante = false) {
+            if (!navigator.onLine || !businessId || staVerificando) return;
+            staVerificando = true;
+            if (mostraLoaderPulsante) {
+                document.getElementById('btn-check').disabled = true;
+                document.getElementById('loader-lock').style.display = 'block';
+            }
+            eseguiChiamataGoogle(
+                { id: businessId, loc: locationId, action: 'check' },
+                function(data) {
+                    document.getElementById('view-loading').style.display = 'none';
+                    staVerificando = false;
+                    if (mostraLoaderPulsante) {
+                        document.getElementById('btn-check').disabled = false;
+                        document.getElementById('loader-lock').style.display = 'none';
+                    }
+                    if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
+                        clearInterval(controlloAutomaticoTimer); controlloAutomaticoTimer = null;
+                        document.body.classList.add('licenza-attiva');
+                        document.getElementById('view-lock').style.display = 'none';
+                        document.getElementById('view-active').style.display = 'block';
+                        
+                        document.getElementById('btn-sos').disabled = false;
+                        document.getElementById('btn-sos').innerText = trad.actSos;
+                        document.getElementById('qr-result').style.display = 'none';
+                        if (contoRovesciaTimer) { clearInterval(contoRovesciaTimer); contoRovesciaTimer = null; }
+                        ripristinaTicketSePresente();
 
-function configuraTelegramWebhook() {
-  var urlScript = ScriptApp.getService().getUrl();
-  var config = getConfig_();
-  var urlBot = "https://api.telegram.org/bot" + config.telegramBotToken + "/setWebhook?url=" + encodeURIComponent(urlScript);
-  var response = UrlFetchApp.fetch(urlBot);
-  Logger.log(response.getContentText());
-}
-
-function ensureTelegramWebhook_() {
-  var cache = CacheService.getScriptCache();
-  var last = cache.get("telegram:webhook:checked");
-  if (last) {
-    return;
-  }
-  cache.put("telegram:webhook:checked", "1", 1800);
-
-  var config = getConfig_();
-  if (!config.telegramBotToken) {
-    return;
-  }
-
-  var urlScript = "";
-  try {
-    urlScript = ScriptApp.getService().getUrl();
-  } catch (e) {
-    return;
-  }
-  if (!urlScript) {
-    return;
-  }
-
-  try {
-    var infoResp = UrlFetchApp.fetch("https://api.telegram.org/bot" + config.telegramBotToken + "/getWebhookInfo", { muteHttpExceptions: true });
-    var info = JSON.parse(infoResp.getContentText() || "{}");
-    var currentUrl = info && info.result ? (info.result.url || "") : "";
-    if (currentUrl !== urlScript) {
-      UrlFetchApp.fetch("https://api.telegram.org/bot" + config.telegramBotToken + "/setWebhook?url=" + encodeURIComponent(urlScript), { muteHttpExceptions: true });
-    }
-  } catch (e2) {}
-}
-
-function escapeTelegramHtml_(testo) {
-  if (testo === null || testo === undefined) {
-    return "";
-  }
-  return String(testo)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function isValidJsonpCallback_(callback) {
-  if (!callback) {
-    return false;
-  }
-  return /^[a-zA-Z_$][0-9a-zA-Z_$]*(\.[a-zA-Z_$][0-9a-zA-Z_$]*)*$/.test(String(callback));
-}
-
-function estraiNomeSedeDaTesto_(testo) {
-  var t = String(testo || "");
-  var lines = t.split("\n");
-  for (var i = 0; i < lines.length; i++) {
-    var line = (lines[i] || "").trim();
-    if (line.indexOf("Sede:") !== -1) {
-      line = line.replace(/^🏢\s*/g, "");
-      line = line.replace(/^\*?Sede:\*?\s*/g, "");
-      return line.trim();
-    }
-  }
-  return "";
-}
-
-function telegramRequest_(config, metodo, payload) {
-  var url = "https://api.telegram.org/bot" + config.telegramBotToken + "/" + metodo;
-  try {
-    var resp = UrlFetchApp.fetch(url, {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload || {}),
-      muteHttpExceptions: true
-    });
-    var body = resp.getContentText() || "";
-    try {
-      return JSON.parse(body);
-    } catch (e) {
-      Logger.log("Telegram non-JSON (" + metodo + "): " + body);
-      return { ok: false, raw: body };
-    }
-  } catch (e2) {
-    Logger.log("Errore Telegram (" + metodo + "): " + e2.toString());
-    return { ok: false, error: e2.toString() };
-  }
-}
-
-function isTelegramMessageNotModified_(telegramResponse) {
-  if (!telegramResponse) {
-    return false;
-  }
-  var descr = telegramResponse.description || telegramResponse.error_description || "";
-  return String(descr).toLowerCase().indexOf("message is not modified") !== -1;
-}
-
-function salvaTicketCache_(ticket) {
-  var token = Utilities.getUuid().replace(/-/g, "").substring(0, 20);
-  var cache = CacheService.getScriptCache();
-  cache.put("t:" + token, JSON.stringify(ticket || {}), 21600);
-  return token;
-}
-
-function leggiTicketCache_(token) {
-  if (!token) {
-    return null;
-  }
-  var cache = CacheService.getScriptCache();
-  var raw = cache.get("t:" + token);
-  if (!raw) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return null;
-  }
-}
-
-function scriviTicketCache_(token, ticket) {
-  if (!token) {
-    return;
-  }
-  var cache = CacheService.getScriptCache();
-  cache.put("t:" + token, JSON.stringify(ticket || {}), 21600);
-}
-
-function pianificaPromemoriaPresaInCarico_(token, scadenzaMs) {
-  if (!token || !scadenzaMs) {
-    return;
-  }
-  var props = PropertiesService.getScriptProperties();
-  var raw = props.getProperty("pending_reminders") || "[]";
-  var list;
-  try {
-    list = JSON.parse(raw);
-  } catch (e) {
-    list = [];
-  }
-  for (var i = 0; i < list.length; i++) {
-    if (list[i] && list[i].t === token) {
-      return;
-    }
-  }
-  list.push({ t: token, due: scadenzaMs });
-  props.setProperty("pending_reminders", JSON.stringify(list));
-
-  ensurePromemoriaTrigger_();
-}
-
-function ensurePromemoriaTrigger_() {
-  try {
-    var triggers = ScriptApp.getProjectTriggers();
-    for (var i = 0; i < triggers.length; i++) {
-      if (triggers[i].getHandlerFunction && triggers[i].getHandlerFunction() === "promemoriaPresaInCarico_") {
-        return;
-      }
-    }
-    ScriptApp.newTrigger("promemoriaPresaInCarico_").timeBased().everyMinutes(1).create();
-  } catch (e) {}
-}
-
-function promemoriaPresaInCarico_() {
-  var config = getConfig_();
-  var props = PropertiesService.getScriptProperties();
-  var raw = props.getProperty("pending_reminders") || "[]";
-  var list;
-  try {
-    list = JSON.parse(raw);
-  } catch (e) {
-    list = [];
-  }
-
-  var now = Date.now();
-  var remaining = [];
-
-  for (var i = 0; i < list.length; i++) {
-    var item = list[i];
-    if (!item || !item.t || !item.due) {
-      continue;
-    }
-    if (item.due > now) {
-      remaining.push(item);
-      continue;
-    }
-
-    var ticket = leggiTicketCache_(item.t);
-    if (!ticket) {
-      continue;
-    }
-    if (ticket.status === "ASSIGNED" || ticket.status === "CLOSED" || ticket.assignedTo) {
-      continue;
-    }
-    if (ticket.reminderSent) {
-      continue;
-    }
-
-    var chatId = ticket.chatId || config.telegramChatId;
-    var meetUrl = ticket.meetUrl || "https://meet.google.com/new";
-    var testo = "⚠️ Nessuno ha preso in carico la richiesta. Premi \"Prendi in carico\".";
-    var payload = {
-      chat_id: chatId,
-      text: testo,
-      parse_mode: "HTML",
-      reply_markup: JSON.stringify({
-        inline_keyboard: [
-          [{ "text": "🟢 ENTRA IN CHIAMATA", "url": meetUrl }],
-          [{ "text": "🙋 Prendi in Carico Intervento", "callback_data": "p_" + item.t }]
-        ]
-      })
-    };
-    telegramRequest_(config, "sendMessage", payload);
-
-    ticket.reminderSent = true;
-    scriviTicketCache_(item.t, ticket);
-  }
-
-  props.setProperty("pending_reminders", JSON.stringify(remaining));
-
-  if (remaining.length === 0) {
-    try {
-      var triggers = ScriptApp.getProjectTriggers();
-      for (var j = 0; j < triggers.length; j++) {
-        if (triggers[j].getHandlerFunction && triggers[j].getHandlerFunction() === "promemoriaPresaInCarico_") {
-          ScriptApp.deleteTrigger(triggers[j]);
+                        if (data.status.startsWith('AVVISO_SCADENZA')) {
+                            mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
+                        } else { nascondiBanner(); }
+                    } else {
+                        document.body.classList.remove('licenza-attiva');
+                        document.getElementById('view-active').style.display = 'none';
+                        document.getElementById('view-lock').style.display = 'block';
+                        mostraBanner(trad.licExpired, "rosso");
+                        attivaLoopControllo();
+                    }
+                },
+                function() {
+                    document.getElementById('view-loading').style.display = 'none';
+                    staVerificando = false;
+                    if (mostraLoaderPulsante) { document.getElementById('btn-check').disabled = false; document.getElementById('loader-lock').style.display = 'none'; }
+                    attivaLoopControllo();
+                }
+            );
         }
-      }
-    } catch (e3) {}
-  }
-}
 
-function estraiTicketDaCallback_(dataParam) {
-  var payload = String(dataParam || "");
-  if (payload.startsWith("p_") || payload.startsWith("r_")) {
-    payload = payload.substring(2);
-  }
-  if (payload.indexOf("|") !== -1) {
-    var parti = payload.split("|");
-    return {
-      token: "",
-      eventId: parti[0],
-      businessId: parti[1],
-      locationId: parti[2],
-      dataApertura: parti[3],
-      meetUrl: parti[4]
-    };
-  }
-  var ticket = leggiTicketCache_(payload) || {};
-  ticket.token = payload;
-  return ticket;
-}
+        function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
 
-function creaEventoCalendarioConMeet_(calendarId, titolo, inizio, fine, descrizione) {
-  var conf = getConfig_();
-  var calId = calendarId || conf.calendarId;
-  try {
-    if (typeof Calendar !== "undefined" && Calendar.Events && Calendar.Events.insert) {
-      var requestId = Utilities.getUuid();
-      var resource = {
-        summary: titolo,
-        description: descrizione,
-        start: { dateTime: inizio.toISOString() },
-        end: { dateTime: fine.toISOString() },
-        conferenceData: {
-          createRequest: {
-            requestId: requestId,
-            conferenceSolutionKey: { type: "hangoutsMeet" }
-          }
+        function richiediSos() {
+            document.getElementById('btn-sos').disabled = true;
+            document.getElementById('loader-sos').style.display = 'block';
+            
+            eseguiChiamataGoogle(
+                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello },
+                function(data) {
+                    document.getElementById('loader-sos').style.display = 'none';
+                    if (data.url) {
+                        localStorage.setItem('sos_url_' + businessId, data.url);
+                        if (data.ticket) localStorage.setItem('sos_ticket_' + businessId, data.ticket);
+                        mostraQrCodeArea(data.url);
+                        document.getElementById('btn-sos').disabled = true;
+                        document.getElementById('btn-sos').innerText = trad.sosSent;
+                        if (data.ticket) avviaPollingTicket(data.ticket);
+                    } else {
+                        mostraBanner(trad.errMeet, "rosso");
+                        document.getElementById('btn-sos').disabled = false;
+                    }
+                },
+                function() {
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('loader-sos').style.display = 'none';
+                    mostraBanner(trad.errConn, "rosso");
+                }
+            );
         }
-      };
-      var created = Calendar.Events.insert(resource, calId, { conferenceDataVersion: 1 });
-      var meetUrl = created.hangoutLink || "";
-      if (!meetUrl && created.conferenceData && created.conferenceData.entryPoints) {
-        for (var i = 0; i < created.conferenceData.entryPoints.length; i++) {
-          var ep = created.conferenceData.entryPoints[i];
-          if (ep && ep.entryPointType === "video" && ep.uri) {
-            meetUrl = ep.uri;
-            break;
-          }
+
+        function mostraQrCodeArea(url) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('direct-meet-link').href = url;
+            document.getElementById('qr-result').style.display = 'block';
+            
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    function riproduciTono(frequenza, inizio, durata) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
+                        osc.frequency.setValueAtTime(frequenza, inizio);
+                        gain.gain.setValueAtTime(0.5, inizio);
+                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
+                        osc.start(inizio); osc.stop(inizio + durata);
+                    }
+                    const adesso = ctx.currentTime;
+                    riproduciTono(880, adesso, 0.3);         
+                    riproduciTono(1046.50, adesso + 0.15, 0.4); 
+                }
+            } catch(e){}
         }
-      }
-      return { eventId: created.id, meetUrl: meetUrl };
-    }
-  } catch (e) {}
 
-  try {
-    var cal = CalendarApp.getCalendarById(calId);
-    var evento = cal.createEvent(titolo, inizio, fine, { description: descrizione });
-    if (evento) {
-      return { eventId: evento.getId().split("@")[0], meetUrl: "" };
-    }
-  } catch (e2) {}
+        function avviaContoRovescia(tempoScadenza) {
+            if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
+            function aggiornaTimer() {
+                const tempoRimanente = tempoScadenza - Date.now();
+                if (tempoRimanente <= 0) {
+                    clearInterval(contoRovesciaTimer);
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('btn-sos').innerText = trad.actSos;
+                    document.getElementById('qr-result').style.display = 'none';
+                } else {
+                    const minutes = Math.floor(tempoRimanente / (1000 * 60));
+                    const seconds = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
+                    document.getElementById('btn-sos').disabled = true;
+                    document.getElementById('btn-sos').innerText = `${trad.sosSent} (${minutes}m ${seconds}s)`;
+                }
+            }
+            aggiornaTimer();
+            contoRovesciaTimer = setInterval(aggiornaTimer, 1000);
+        }
 
-  return { eventId: "sos_" + new Date().getTime(), meetUrl: "" };
-}
+        let pollingTicketTimer = null;
 
-function aggiornaDescrizioneEventoCalendario_(calendarId, eventId, descrizione) {
-  if (!eventId || String(eventId).startsWith("sos_")) {
-    return;
-  }
-  var conf = getConfig_();
-  var calId = calendarId || conf.calendarId;
-  try {
-    var cal = CalendarApp.getCalendarById(calId);
-    var evento = cal.getEventById(String(eventId) + "@google.com");
-    if (evento) {
-      evento.setDescription(descrizione);
-      return;
-    }
-  } catch (e) {}
+        function avviaPollingTicket(token) {
+            if (pollingTicketTimer) clearInterval(pollingTicketTimer);
+            function check() {
+                eseguiChiamataGoogle(
+                    { action: 'ticket_status', token: token },
+                    function(res) {
+                        if (!res || res.status === 'NON_TROVATO' || res.status === 'CLOSED') {
+                            clearInterval(pollingTicketTimer);
+                            pollingTicketTimer = null;
+                            localStorage.removeItem('sos_ticket_' + businessId);
+                            localStorage.removeItem('sos_url_' + businessId);
+                            document.getElementById('btn-sos').disabled = false;
+                            document.getElementById('btn-sos').innerText = trad.actSos;
+                            document.getElementById('qr-result').style.display = 'none';
+                            return;
+                        }
+                        document.getElementById('btn-sos').disabled = true;
+                        document.getElementById('btn-sos').innerText = trad.sosSent;
+                    },
+                    function() {}
+                );
+            }
+            check();
+            pollingTicketTimer = setInterval(check, 5000);
+        }
 
-  try {
-    if (typeof Calendar !== "undefined" && Calendar.Events && Calendar.Events.patch) {
-      Calendar.Events.patch({ description: descrizione }, calId, String(eventId));
-    }
-  } catch (e2) {}
-}
+        function ripristinaTicketSePresente() {
+            const token = localStorage.getItem('sos_ticket_' + businessId);
+            const url = localStorage.getItem('sos_url_' + businessId);
+            if (url) mostraQrCodeArea(url);
+            if (token) {
+                document.getElementById('btn-sos').disabled = true;
+                document.getElementById('btn-sos').innerText = trad.sosSent;
+                avviaPollingTicket(token);
+            }
+        }
+
+        window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
+        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
+    </script>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+</body>
+</html>
