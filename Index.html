@@ -114,3 +114,298 @@
         <div id="loader-lock" class="spinner"></div>
         <div id="status-text"></div>
     </div>
+
+    <div id="view-active" class="container" style="display: none;">
+        <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
+        <h2 id="text-act-title">Assistenza SOS</h2>
+        <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span></div>
+        <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.</p>
+        <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
+        <div id="loader-sos" class="spinner"></div>
+        
+        <div id="qr-result">
+            <div class="testo-scansione" id="text-act-scan">📱 Scansiona o clicca sotto per entrare</div>
+            <img id="qr-image" src="" alt="QR Code">
+            <a id="direct-meet-link" href="#" target="_blank" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
+        </div>
+    </div>
+
+    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
+
+    <script>
+        // ========================================================
+        // 📥 GESTIONE DATI ORIGINALE + SUPPORTO MACRO LIGHTSPEED
+        // ========================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessId = urlParams.get('id') || '12345';
+        const locationId = urlParams.get('loc') || 'sede';
+        
+        // Legge primariamente il nome testuale del negozio (loc_name), altrimenti fa fallback su loc
+        let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'sede';
+        let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
+        
+        locationName = locationName.replace(/[*#@!$%&]/g, '');
+        userName = userName.replace(/[*#@!$%&]/g, '');
+
+        const locationFormattata = locationName.trim();
+        const userFormattato = userName.trim(); 
+        const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
+
+        // 🛑 FIX CACHE 3CX: Forza la distruzione del vecchio localstorage se l'utente cambia
+        if (localStorage.getItem('current_3cx_user') !== datoCompleto) {
+            localStorage.setItem('current_3cx_user', datoCompleto);
+            // Puliamo i token di sessione del widget 3CX per forzare il refresh del nome
+            for (let key in localStorage) {
+                if (key.startsWith('tcx-') || key.includes('3cx')) {
+                    localStorage.removeItem(key);
+                }
+            }
+        }
+
+        const widget = document.getElementById('widget-3cx');
+        if(widget) {
+            widget.setAttribute('visitor-name', datoCompleto);
+            widget.setAttribute('default-user-name', datoCompleto);
+        }
+        // ========================================================
+
+        // ==========================================
+        // 🌐 TRADUZIONI E CONFIGURAZIONE INTERFACCIA
+        // ==========================================
+        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        const userLang = (navigator.language || navigator.userLanguage || 'it');
+        const isEn = !userLang.startsWith('it');
+        const linguaModello = isEn ? 'en' : 'it';
+
+        const dizionario = {
+            it: {
+                loading: "Verifica abbonamento in corso...",
+                lockTitle: "Servizio Premium Non Attivo",
+                lockDesc: "Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.",
+                lockLink: "💳 Sblocca Servizio",
+                lockVerify: "🔄 Ho già pagato, verifica",
+                actTitle: "Assistenza SOS",
+                actWelcome: "Benvenuto",
+                actDesc: "Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.",
+                actSos: "🚨 Richiedi Videoassistenza",
+                actScan: "📱 Scansiona o clicca sotto per entrare",
+                actMeetBtn: "🟢 ENTRA IN VIDEOCHIAMATA",
+                sosSent: "🚨 SOS INVIATO",
+                errWifi: "⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.",
+                errMeet: "Errore server creazione Meet.",
+                errConn: "Errore di connessione durante la richiesta SOS.",
+                licExpired: "❌ Servizio Premium Scaduto o Non Attivo per questa cassa.",
+                licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale"
+            },
+            en: {
+                loading: "Checking subscription status...",
+                lockTitle: "Premium Service Not Active",
+                lockDesc: "To use the SOS Service Block feature and receive immediate video assistance at checkout, please activate the Premium plan.",
+                lockLink: "💳 Unlock Service",
+                lockVerify: "🔄 Already paid, verify",
+                actTitle: "SOS Assistance",
+                actWelcome: "Welcome",
+                actDesc: "We are at your disposal. Click to start an immediate video call or use the chat in the bottom right corner.",
+                actSos: "🚨 Request Video Assistance",
+                actScan: "📱 Scan or click below to join",
+                actMeetBtn: "🟢 JOIN VIDEO CALL",
+                sosSent: "🚨 SOS SENT",
+                errWifi: "⚠️ No Internet Connection. Please check the iPad Wi-Fi.",
+                errMeet: "Server error during Meet creation.",
+                errConn: "Connection error during SOS request.",
+                licExpired: "❌ Premium Service Expired or Not Active for this checkout.",
+                licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support"
+            }
+        };
+
+        const trad = dizionario[linguaModello];
+
+        document.getElementById('text-loading').innerText = trad.loading;
+        document.getElementById('text-lock-title').innerText = trad.lockTitle;
+        document.getElementById('text-lock-desc').innerText = trad.lockDesc;
+        document.getElementById('text-lock-link').innerText = trad.lockLink;
+        document.getElementById('btn-check').innerText = trad.lockVerify;
+        document.getElementById('text-act-title').innerText = trad.actTitle;
+        document.getElementById('text-act-welcome').innerText = trad.actWelcome;
+        document.getElementById('text-act-desc').innerText = trad.actDesc;
+        document.getElementById('btn-sos').innerText = trad.actSos;
+        document.getElementById('text-act-scan').innerText = trad.actScan;
+        document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
+        document.getElementById('display-user').innerText = userFormattato;
+
+        let controlloAutomaticoTimer = null;
+        let staVerificando = false;
+        let contoRovesciaTimer = null;
+
+        function mostraBanner(testo, tipo) {
+            const banner = document.getElementById('error-banner');
+            banner.className = "wifi-alert-banner " + (tipo === 'rosso' ? 'banner-rosso' : 'banner-arancione');
+            document.getElementById('error-banner-message').innerText = testo;
+            banner.classList.add('mostra');
+        }
+
+        function nascondiBanner() { document.getElementById('error-banner').classList.remove('mostra'); }
+
+        window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
+        window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
+
+        function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
+            if (!navigator.onLine) { callbackErrore("Offline"); return; }
+            const callbackName = 'handler_' + Math.round(100000 * Math.random());
+            const timeoutTimer = setTimeout(() => {
+                delete window[callbackName];
+                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
+                callbackErrore("Timeout");
+            }, 6000);
+            window[callbackName] = function(data) { clearTimeout(timeoutTimer); callbackSuccesso(data); delete window[callbackName]; if (document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            const queryParams = new URLSearchParams(parametri);
+            queryParams.append('callback', callbackName);
+            const script = document.createElement('script');
+            script.id = callbackName;
+            script.src = `${googleScriptUrl}?${queryParams.toString()}`;
+            script.onerror = function() { clearTimeout(timeoutTimer); callbackErrore("Error"); delete window[callbackName]; if(document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            document.body.appendChild(script);
+        }
+
+        function verificaLicenza(mostraLoaderPulsante = false) {
+            if (!navigator.onLine || !businessId || staVerificando) return;
+            staVerificando = true;
+            if (mostraLoaderPulsante) {
+                document.getElementById('btn-check').disabled = true;
+                document.getElementById('loader-lock').style.display = 'block';
+            }
+            // Mantiene l'allineamento sul codice locationId per il foglio Google licenze
+            eseguiChiamataGoogle(
+                { id: businessId, loc: locationId, action: 'check' },
+                function(data) {
+                    document.getElementById('view-loading').style.display = 'none';
+                    staVerificando = false;
+                    if (mostraLoaderPulsante) {
+                        document.getElementById('btn-check').disabled = false;
+                        document.getElementById('loader-lock').style.display = 'none';
+                    }
+                    if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
+                        clearInterval(controlloAutomaticoTimer); controlloAutomaticoTimer = null;
+                        document.body.classList.add('licenza-attiva');
+                        document.getElementById('view-lock').style.display = 'none';
+                        document.getElementById('view-active').style.display = 'block';
+                        controllaStatoBloccoSos();
+                        if (data.status.startsWith('AVVISO_SCADENZA')) {
+                            mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
+                        } else { nascondiBanner(); }
+                    } else {
+                        document.body.classList.remove('licenza-attiva');
+                        document.getElementById('view-active').style.display = 'none';
+                        document.getElementById('view-lock').style.display = 'block';
+                        mostraBanner(trad.licExpired, "rosso");
+                        attivaLoopControllo();
+                    }
+                },
+                function() {
+                    document.getElementById('view-loading').style.display = 'none';
+                    staVerificando = false;
+                    if (mostraLoaderPulsante) { document.getElementById('btn-check').disabled = false; document.getElementById('loader-lock').style.display = 'none'; }
+                    attivaLoopControllo();
+                }
+            );
+        }
+
+        function BlacklistLoopControllo() {}
+        function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
+
+        function richiediSos() {
+            document.getElementById('btn-sos').disabled = true;
+            document.getElementById('loader-sos').style.display = 'block';
+            
+            eseguiChiamataGoogle(
+                { id: businessId, loc: locationId, action: 'sos', lang: linguaModello },
+                function(data) {
+                    document.getElementById('loader-sos').style.display = 'none';
+                    if (data.url) {
+                        const scadenzaBlocco = Date.now() + (30 * 60 * 1000);
+                        localStorage.setItem('sos_scadenza_' + businessId, scadenzaBlocco);
+                        localStorage.setItem('sos_url_' + businessId, data.url);
+                        mostraQrCodeArea(data.url);
+                        avviaContoRovescia(scadenzaBlocco);
+                    } else {
+                        mostraBanner(trad.errMeet, "rosso");
+                        document.getElementById('btn-sos').disabled = false;
+                    }
+                },
+                function() {
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('loader-sos').style.display = 'none';
+                    mostraBanner(trad.errConn, "rosso");
+                }
+            );
+        }
+
+        function mostraQrCodeArea(url) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('direct-meet-link').href = url;
+            document.getElementById('qr-result').style.display = 'block';
+            
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    function riproduciTono(frequenza, inizio, durata) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
+                        osc.frequency.setValueAtTime(frequenza, inizio);
+                        gain.gain.setValueAtTime(0.5, inizio);
+                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
+                        osc.start(inizio); osc.stop(inizio + durata);
+                    }
+                    const adesso = ctx.currentTime;
+                    riproduciTono(880, adesso, 0.3);         
+                    riproduciTono(1046.50, adesso + 0.15, 0.4); 
+                }
+            } catch(e){}
+        }
+
+        function avviaContoRovescia(tempoScadenza) {
+            if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
+            function aggiornaTimer() {
+                const tempoRimanente = tempoScadenza - Date.now();
+                if (tempoRimanente <= 0) {
+                    clearInterval(contoRovesciaTimer);
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('btn-sos').innerText = trad.actSos;
+                    document.getElementById('qr-result').style.display = 'none';
+                } else {
+                    const minuti = Math.floor(tempoRimanente / (1000 * 60));
+                    const secondi = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
+                    document.getElementById('btn-sos').disabled = true;
+                    document.getElementById('btn-sos').innerText = `${trad.sosSent} (${minuti}m ${secondi}s)`;
+                }
+            }
+            aggiornaTimer();
+            contoRovesciaTimer = setInterval(aggiornaTimer, 1000);
+        }
+
+        function controllaStatoBloccoSos() {
+            const salvatoScadenza = localStorage.getItem('sos_scadenza_' + businessId);
+            const salvatoUrl = localStorage.getItem('sos_url_' + businessId);
+            if (salvatoScadenza && salvatoUrl) {
+                if (Date.now() < parseInt(salvatoScadenza, 10)) {
+                    mostraQrCodeArea(salvatoUrl);
+                    avviaContoRovescia(parseInt(salvatoScadenza, 10));
+                } else {
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                }
+            }
+        }
+
+        window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
+
+        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
+    </script>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+</body>
+</html>
