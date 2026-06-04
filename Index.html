@@ -41,6 +41,7 @@
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .sos-btn:disabled { background: #cbd5e1; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
         
         .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
 
@@ -120,6 +121,7 @@
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
+        let contoRovesciaTimer = null;
 
         document.getElementById('display-user').innerText = userName;
 
@@ -213,7 +215,9 @@
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                         
-                        // 🔔 TESTO AGGIORNATO QUI SOTTO
+                        // Controlla se c'è un blocco da 30 minuti attivo in cache
+                        controllaStatoBloccoSos();
+
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
                             mostraBanner("⚠️ Il servizio Premium scadrà tra " + data.giorni + " giorni. Rinnova per avere assistenza in tempo reale", "arancione");
                         } else {
@@ -257,11 +261,13 @@
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
-                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.url)}`;
-                        document.getElementById('qr-image').src = qrUrl;
-                        document.getElementById('direct-meet-link').href = data.url;
-                        document.getElementById('qr-result').style.display = 'block';
-                        document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
+                        // 🕒 SALVA I DATI IN LOCALSTORAGE PER I 30 MINUTI DI CONGELAMENTO
+                        const scadenzaBlocco = Date.now() + (30 * 60 * 1000); // Ora attuale + 30 minuti
+                        localStorage.setItem('sos_scadenza_' + businessId, scadenzaBlocco);
+                        localStorage.setItem('sos_url_' + businessId, data.url);
+
+                        mostraQrCodeArea(data.url);
+                        avviaContoRovescia(scadenzaBlocco);
                     } else {
                         mostraBanner("Errore server creazione Meet.", "rosso");
                         document.getElementById('btn-sos').disabled = false;
@@ -273,6 +279,61 @@
                     mostraBanner("Errore di connessione durante la richiesta SOS.", "rosso");
                 }
             );
+        }
+
+        function mostraQrCodeArea(url) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('direct-meet-link').href = url;
+            document.getElementById('qr-result').style.display = 'block';
+        }
+
+        // ⏱️ GESTIONE DEL CONTO ALLA ROVESCIA VISIVO
+        function avviaContoRovescia(tempoScadenza) {
+            if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
+
+            function aggiornaTimer() {
+                const tempoRimanente = tempoScadenza - Date.now();
+
+                if (tempoRimanente <= 0) {
+                    // Fine del blocco dei 30 minuti! Sblocca il pulsante
+                    clearInterval(contoRovesciaTimer);
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                    
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('btn-sos').innerText = "🚨 Richiedi Videoassistenza";
+                    document.getElementById('qr-result').style.display = 'none';
+                } else {
+                    // Calcolo minuti e secondi rimasti
+                    const minuti = Math.floor(tempoRimanente / (1000 * 60));
+                    const secondi = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
+                    
+                    document.getElementById('btn-sos').disabled = true;
+                    document.getElementById('btn-sos').innerText = `🚨 SOS INVIATO (${minuti}m ${secondi}s)`;
+                }
+            }
+
+            aggiornaTimer();
+            contoRovesciaTimer = setInterval(aggiornaTimer, 1000);
+        }
+
+        // 💾 FUNZIONE CHE CONTROLLA SE LA COSA È GIÀ SALVATA IN MEMORIA (DURANTE I REFRESH)
+        function controllaStatoBloccoSos() {
+            const salvatoScadenza = localStorage.getItem('sos_scadenza_' + businessId);
+            const salvatoUrl = localStorage.getItem('sos_url_' + businessId);
+
+            if (salvatoScadenza && salvatoUrl) {
+                if (Date.now() < parseInt(salvatoScadenza, 10)) {
+                    // Siamo ancora nel range dei 30 minuti: ricostruisce lo stato esatto bloccato
+                    mostraQrCodeArea(salvatoUrl);
+                    avviaContoRovescia(parseInt(salvatoScadenza, 10));
+                } else {
+                    // Tempo scaduto in background: pulisce la cache
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                }
+            }
         }
 
         window.onload = function() { 
