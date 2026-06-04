@@ -3,103 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interfaccia Assistenza SOS</title>
+    <title>Assistenza SOS</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f2f2f7; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .btn-sos { background-color: #ff3b30; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-shadow: 0 4px 6px rgba(255,59,48,0.3); transition: all 0.2s; }
-        .btn-sos:active { transform: scale(0.98); background-color: #e03228; }
-        .banner { display: none; margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 14px; }
-        .banner.error { display: block; background-color: #ffe5e5; color: #ff3b30; border: 1px solid #ff3b30; }
-        .banner.success { display: block; background-color: #e4fbf0; color: #34c759; border: 1px solid #34c759; }
-        .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #ff3b30; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 15px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f2f2f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 400px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #1c1c1e;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            color: #3a3a3c;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        .btn-sos {
+            background-color: #ff3b30;
+            color: #ffffff;
+            border: none;
+            padding: 20px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(255, 59, 48, 0.3);
+            transition: transform 0.1s, background-color 0.2s;
+            width: 100%;
+        }
+        .btn-sos:active {
+            transform: scale(0.95);
+            background-color: #d7261e;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 16px;
+            color: #8e8e93;
+        }
+        .error-banner {
+            display: none;
+            margin-top: 20px;
+            background-color: #ffe5e5;
+            color: #ff3b30;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            border: 1px solid #ff3b30;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Assistenza Tecnica Remota</h2>
-    <p>In caso di anomalie gravi al punto cassa, premi il pulsante sotto per avviare una videochiamata con un tecnico.</p>
-    
-    <button class="btn-sos" id="sosBtn" onclick="inviaRichiestaSOS()">🚨 ATTIVA CHIAMATA SOS</button>
-    
-    <div class="loader" id="loader"></div>
-    <div id="statusBanner" class="banner"></div>
+    <h1 id="title">Videoassistenza SOS</h1>
+    <p id="description">In caso di blocco del servizio o anomalie gravi, premi il pulsante per avviare una chiamata video con un tecnico.</p>
+    <button class="btn-sos" id="sos-button" onclick="startSOS()">🚨 SOS</button>
+    <div class="loading" id="loading">Creazione stanza Meet in corso...</div>
+    <div class="error-banner" id="error-banner"></div>
 </div>
 
 <script>
-    // Configura qui i parametri fissi del tablet o estraili dinamicamente dall'URL
     const urlParams = new URLSearchParams(window.location.search);
-    const BUSINESS_ID = urlParams.get('id') || "12345"; // Inserisci qui l'ID predefinito se necessario
-    const LOCATION_ID = urlParams.get('loc') || "67890";
-    const LOCATION_NAME = urlParams.get('loc_name') || "Sede Principale";
-    
-    // Incolla qui il tuo URL di Apps Script /exec
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+    const businessId = urlParams.get('id');
+    const locationId = urlParams.get('loc');
+    const locationName = urlParams.get('loc_name') || "Sede";
+    const lang = urlParams.get('lang') || 'it';
 
-    function inviaRichiestaSOS() {
-        const btn = document.getElementById('sosBtn');
-        const loader = document.getElementById('loader');
-        const banner = document.getElementById('statusBanner');
-        
-        btn.disabled = true;
-        loader.style.display = 'block';
-        banner.className = 'banner';
-        banner.style.display = 'none';
-
-        // Costruiamo la richiesta con il bypass callback per evitare blocchi CORS sull'iPad
-        const targetUrl = `${SCRIPT_URL}?action=sos&id=${encodeURIComponent(BUSINESS_ID)}&loc=${encodeURIComponent(LOCATION_ID)}&loc_name=${encodeURIComponent(LOCATION_NAME)}&callback=gestisciRisposta`;
-
-        // Rimuove vecchi script di chiamata se presenti
-        const vecchioScript = document.getElementById('jsonpCall');
-        if (vecchioScript) vecchioScript.remove();
-
-        // Iniezione dinamica dello script (Metodo JSONP super sicuro per tablet)
-        const script = document.createElement('script');
-        script.id = 'jsonpCall';
-        script.src = targetUrl;
-        script.onerror = function() {
-            mostraErrore("Impossibile contattare il server cloud. Controlla la connessione internet.");
-        };
-        
-        document.body.appendChild(script);
+    if (lang === 'en') {
+        document.getElementById('title').innerText = 'SOS Video Support';
+        document.getElementById('description').innerText = 'In case of service block or serious issues, press the button to start a video call with a technician.';
+        document.getElementById('loading').innerText = 'Creating Meet room...';
     }
 
-    // Questa funzione viene attivata direttamente dalla risposta del server di Google
-    function gestisciRisposta(data) {
-        const btn = document.getElementById('sosBtn');
-        const loader = document.getElementById('loader');
-        const banner = document.getElementById('statusBanner');
-        
-        btn.disabled = false;
-        loader.style.display = 'none';
+    // Sostituisci questa stringa con il tuo URL /exec corrente di Google Apps Script
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        if (data && data.status === "ATTIVO" && data.url) {
-            banner.className = "banner success";
-            banner.innerHTML = "Stanza Meet Creata! Apertura in corso...";
-            banner.style.display = 'block';
-            
-            // Reindirizza l'iPad direttamente dentro la stanza di Google Meet
-            setTimeout(() => {
-                window.location.href = data.url;
-            }, 1000);
-        } else {
-            mostraErrore(data.error || "Errore sconosciuto durante la creazione del link Meet.");
+    function startSOS() {
+        if (!businessId) {
+            showError(lang === 'en' ? 'Error: Missing Business ID' : 'Errore: ID Business mancante');
+            return;
         }
+
+        document.getElementById('sos-button').disabled = true;
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error-banner').style.display = 'none';
+
+        const targetUrl = `${webAppUrl}?action=sos&id=${encodeURIComponent(businessId)}&loc=${encodeURIComponent(locationId)}&loc_name=${encodeURIComponent(locationName)}&lang=${lang}`;
+
+        fetch(targetUrl)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('sos-button').disabled = false;
+
+                if (data.status === 'ATTIVO' && data.url) {
+                    window.location.href = data.url;
+                } else if (data.status === 'SCADUTO') {
+                    window.location.href = 'https://buy.stripe.com/tuo_link_di_pagamento_reale';
+                } else {
+                    showError(data.error || (lang === 'en' ? 'Server error creating Meet.' : 'Errore server creazione Meet.'));
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('sos-button').disabled = false;
+                showError(lang === 'en' ? 'Connection error.' : 'Errore di connessione.');
+            });
     }
 
-    function mostraErrore(messaggio) {
-        const btn = document.getElementById('sosBtn');
-        const loader = document.getElementById('loader');
-        const banner = document.getElementById('statusBanner');
-        
-        btn.disabled = false;
-        loader.style.display = 'none';
-        banner.className = "banner error";
-        banner.innerHTML = `⚠️ Errore server: ${messaggio}`;
+    function showError(msg) {
+        const banner = document.getElementById('error-banner');
+        banner.innerText = msg;
         banner.style.display = 'block';
     }
 </script>
+
 </body>
 </html>
