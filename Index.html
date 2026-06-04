@@ -7,7 +7,6 @@
     <style>
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; width: 100%; overflow-x: hidden; }
         
-        /* 📐 CONFIGURAZIONE BOX PRINCIPALE */
         .container { 
             background: white; 
             border-radius: 18px; 
@@ -20,11 +19,8 @@
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin 0.4s ease, max-width 0.4s ease;
         }
 
-        /* 🚀 LAYOUT IPAD: SCHEDA ASSISTENZA ALTA A SINISTRA */
         @media screen and (min-width: 768px) and (orientation: landscape) {
-            body.licenza-attiva {
-                display: block !important; 
-            }
+            body.licenza-attiva { display: block !important; }
             body.licenza-attiva #view-active {
                 max-width: 380px; 
                 position: absolute;
@@ -40,17 +36,13 @@
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
         
-        /* Interfaccia Pulsanti */
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
         
-        /* 🟢 NUOVO PULSANTE DIRETTO MEET (SOTTO IL QR) */
-        .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 14px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: background 0.2s; }
-        .direct-meet-btn:hover { background: #059669; }
+        .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
 
-        /* Spinner */
         .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; display: none; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -59,29 +51,16 @@
         #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
 
-        /* Area Codici QR e Risultato */
         #qr-result { margin-top: 25px; display: none; }
-        .testo-scansione { font-size: 16px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
-        #qr-image { width: 180px; height: 180px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
+        .testo-scansione { font-size: 15px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
+        #qr-image { width: 160px; height: 160px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
 
-        /* Banner Notifica */
         .wifi-alert-banner { position: absolute; top: -60px; left: 0; right: 0; background-color: #ef4444; color: white; text-align: center; padding: 12px 20px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .wifi-alert-banner.mostra { top: 0; }
         .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
 
-        /* Esclusione Widget 3CX se Licenza non Attiva */
-        #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"], div[id^="tcx-"] {
-            display: none !important;
-            visibility: hidden !important;
-        }
-        body.licenza-attiva #widget-3cx, 
-        body.licenza-attiva call-us-selector, 
-        body.licenza-attiva .tcx-callus-button,
-        body.licenza-attiva iframe[title*="3CX"],
-        body.licenza-attiva div[id^="tcx-"] {
-            display: block !important;
-            visibility: visible !important;
-        }
+        #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"], div[id^="tcx-"] { display: none !important; visibility: hidden !important; }
+        body.licenza-attiva #widget-3cx, body.licenza-attiva call-us-selector, body.licenza-attiva .tcx-callus-button, body.licenza-attiva iframe[title*="3CX"], body.licenza-attiva div[id^="tcx-"] { display: block !important; visibility: visible !important; }
     </style>
 </head>
 <body>
@@ -116,7 +95,7 @@
         <div id="loader-sos" class="spinner"></div>
         
         <div id="qr-result">
-            <div class="testo-scansione">📱 Scansiona il QR Code o entra da qui</div>
+            <div class="testo-scansione">📱 Scansiona o clicca sotto per entrare</div>
             <img id="qr-image" src="" alt="QR Code">
             <a id="direct-meet-link" href="#" target="_blank" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
         </div>
@@ -186,20 +165,12 @@
                 document.getElementById('view-lock').style.display = 'block';
                 return;
             }
-            
-            document.getElementById('btn-check').disabled = true;
-            document.getElementById('loader-lock').style.display = 'block';
-            document.getElementById('status-text').innerText = "Verifica in corso...";
             nascondiBannerErrore();
 
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
-                    document.getElementById('btn-check').disabled = false;
-                    document.getElementById('loader-lock').style.display = 'none';
-                    document.getElementById('status-text').innerText = "";
-                    
                     if (data.status === 'ATTIVO') {
                         document.body.classList.add('licenza-attiva');
                         document.getElementById('view-lock').style.display = 'none';
@@ -213,9 +184,6 @@
                 },
                 function(messaggioErrore) {
                     document.getElementById('view-loading').style.display = 'none';
-                    document.getElementById('btn-check').disabled = false;
-                    document.getElementById('loader-lock').style.display = 'none';
-                    document.getElementById('status-text').innerText = "";
                     document.body.classList.remove('licenza-attiva');
                     document.getElementById('view-active').style.display = 'none';
                     document.getElementById('view-lock').style.display = 'block';
@@ -229,18 +197,13 @@
             document.getElementById('loader-sos').style.display = 'block';
 
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, loc_name: locationName, user: userName, action: 'sos' },
+                { id: businessId, loc: locationId, action: 'sos' },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
-                        // 1. Assegna l'URL al QR Code per chi scansiona da fuori
-                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.url)}`;
+                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.url)}`;
                         document.getElementById('qr-image').src = qrUrl;
-                        
-                        // 2. Aggiorna il link del NUOVO pulsante per l'accesso diretto dall'iPad
                         document.getElementById('direct-meet-link').href = data.url;
-                        
-                        // Mostra l'area dei risultati sbloccati
                         document.getElementById('qr-result').style.display = 'block';
                         document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
                     } else {
