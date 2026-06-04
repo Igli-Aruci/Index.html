@@ -130,47 +130,52 @@
         </div>
     </div>
 
-    <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
+    <div id="container-widget-3cx"></div>
 
     <script>
         // ========================================================
-        // 📥 MATCH CON IL TUO URL DI LIGHTSPEED + FIX ACCORDO SERVER 3CX
+        // 📥 MATCH CON IL TUO URL DI LIGHTSPEED + LOCATION NAME DOPO IL BUSINESS ID
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
         const locationId = (urlParams.get('loc') || 'sede').trim();
+        let locationName = (urlParams.get('loc_name') || 'norivalmaster').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        userName = userName.replace(/[*#@!$%&]/g, '');
-        const userFormattato = userName.trim();
+        // Pulizia caratteri speciali
+        userName = userName.replace(/[*#@!$%&]/g, '').trim();
+        locationName = locationName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
 
-        // 🛠️ IL TRUCCO: Generiamo un hash univoco corto basato sul nome utente (es. Igli A -> hash 4821)
-        // Questo rompe la vecchia identificazione forzata sul server di 3CX e lo costringe a registrare il nome vero!
+        // Generazione Hash di sicurezza per forzare l'aggiornamento lato server 3CX
         let userHash = 0;
-        for (let i = 0; i < userFormattato.length; i++) {
-            userHash = (userHash << 5) - userHash + userFormattato.charCodeAt(i);
+        for (let i = 0; i < userName.length; i++) {
+            userHash = (userHash << 5) - userHash + userName.charCodeAt(i);
             userHash |= 0;
         }
         const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
 
-        // Stringa d'invio pulita, modificata dinamicamente per forzare il refresh lato server di 3CX
-        const datoCompleto3CX = userFormattato + '-' + businessId + '-' + locationId + '-' + idUnivocoServer;
+        // 📍 NUOVA STRUTTURA: NomeUtente - BusinessId - LocationName - LocationId - Hash
+        const datoCompleto3CX = userName + '-' + businessId + '-' + locationName + '-' + locationId + '-' + idUnivocoServer;
 
-        // Reset aggressivo memoria locale del browser dell'iPad
+        // Reset aggressivo LocalStorage dell'iPad se cambia l'utente
         if (localStorage.getItem('current_3cx_session_user') !== datoCompleto3CX) {
             localStorage.setItem('current_3cx_session_user', datoCompleto3CX);
             for (let key in localStorage) {
-                if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus')) {
+                if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus') || key.startsWith('3cx-')) {
                     localStorage.removeItem(key);
                 }
             }
         }
 
-        const widget3cxElement = document.getElementById('widget-3cx');
-        if (widget3cxElement) {
-            widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
-            widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
-        }
+        // Creazione dinamica del tag 3CX prima del caricamento dello script esterno
+        const containerWidget = document.getElementById('container-widget-3cx');
+        const selector3cx = document.createElement('call-us-selector');
+        selector3cx.setAttribute('id', 'widget-3cx');
+        selector3cx.setAttribute('phonesystem-url', 'https://norival.my3cx.it');
+        selector3cx.setAttribute('party', 'LiveChat385165');
+        selector3cx.setAttribute('visitor-name', datoCompleto3CX);
+        selector3cx.setAttribute('default-user-name', datoCompleto3CX);
+        containerWidget.appendChild(selector3cx);
         // ========================================================
 
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
@@ -232,7 +237,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userFormattato;
+        document.getElementById('display-user').innerText = userName;
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -355,7 +360,7 @@
                         osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
                         osc.frequency.setValueAtTime(frequenza, inizio);
                         gain.gain.setValueAtTime(0.5, inizio);
-                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
+                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + duration);
                         osc.start(inizio); osc.stop(inizio + durata);
                     }
                     const adesso = ctx.currentTime;
