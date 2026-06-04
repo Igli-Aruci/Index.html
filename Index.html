@@ -8,24 +8,16 @@
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
         .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 90%; max-width: 420px; text-align: center; }
         .brand-logo { max-width: 200px; height: auto; margin: 0 auto 20px auto; display: block; }
-        
         h2 { color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
-        
-        /* Bottoni */
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
-        
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
-        .sos-btn:disabled { background: #cbd5e1; color: #475569; box-shadow: none; cursor: not-allowed; }
-
-        /* Loader Spinner */
         .spinner { display: none; width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; }
+        #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Area QR Code */
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
@@ -37,98 +29,101 @@
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2>Servizio Premium Non Attivo</h2>
         <p>Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
-        
         <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn">💳 Sblocca Servizio</a>
         <button id="btn-check" onclick="verificaLicenza()" class="verify-btn">🔄 Ho già pagato, verifica</button>
-        
         <div id="loader-lock" class="spinner"></div>
+        <div id="status-text"></div>
     </div>
 
     <div id="view-active" class="container" style="display: none;">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2>Assistenza SOS</h2>
         <div class="benvenuto">Benvenuto <span id="display-user">Utente</span></div>
-        <p>Siamo a tua completa disposizione. Clicca sul pulsante rosso per avviare una videochiamata immediata con un tecnico.</p>
-        
+        <p>Siamo a tua disposizione. Clicca per avviare la videochiamata immediata.</p>
         <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
         <div id="loader-sos" class="spinner"></div>
-
         <div id="qr-result">
-            <div class="testo-scansione">📱 Scansiona il QR Code per entrare</div>
+            <div class="testo-scansione">📱 Scansiona il QR Code</div>
             <img id="qr-image" src="" alt="QR Code">
         </div>
     </div>
 
     <script>
-        // URL ESEGUIBILE DELLA TUA WEB APP GOOGLE APPS SCRIPT
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
 
-        // Estrazione nativa e pulizia dei parametri URL passati da Lightspeed all'iPad
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '').trim();
         const locationId = (urlParams.get('loc') || '').trim();
         const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
         const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
 
-        // Stampa il nome dell'operatore rilevato dal POS
         document.getElementById('display-user').innerText = userName;
 
-        // Sistema di iniezione script volante (JSONP) per bypassare le protezioni CORS dell'iPad
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
             const callbackName = 'handler_' + Math.round(100000 * Math.random());
             
+            // Imposta un timer di sicurezza di 8 secondi per evitare il caricamento infinito
+            const timeoutTimer = setTimeout(() => {
+                delete window[callbackName];
+                const scriptEl = document.getElementById(callbackName);
+                if (scriptEl) scriptEl.remove();
+                callbackErrore("Timeout: i server Google non rispondono.");
+            }, 8000);
+
             window[callbackName] = function(data) {
+                clearTimeout(timeoutTimer);
                 callbackSuccesso(data);
                 delete window[callbackName];
-                document.getElementById(callbackName).remove();
+                const scriptEl = document.getElementById(callbackName);
+                if (scriptEl) scriptEl.remove();
             };
 
             const queryParams = new URLSearchParams(parametri);
             queryParams.append('callback', callbackName);
-
             const script = document.createElement('script');
             script.id = callbackName;
             script.src = `${googleScriptUrl}?${queryParams.toString()}`;
             script.onerror = function() {
-                callbackErrore();
+                clearTimeout(timeoutTimer);
+                callbackErrore("Errore di rete nell'iniezione dello script.");
                 delete window[callbackName];
                 if(document.getElementById(callbackName)) document.getElementById(callbackName).remove();
             };
             document.body.appendChild(script);
         }
 
-        // 1. Azione del pulsante di Controllo Licenza
         function verificaLicenza() {
             if (!businessId) {
-                alert("Nessun parametro ID valido rilevato da Lightspeed nell'URL.");
+                document.getElementById('status-text').innerText = "Nessun parametro ID ricevuto dall'iPad.";
                 return;
             }
             document.getElementById('btn-check').disabled = true;
             document.getElementById('loader-lock').style.display = 'block';
+            document.getElementById('status-text').innerText = "Connessione al database di Google Sheets...";
 
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
                 function(data) {
                     document.getElementById('btn-check').disabled = false;
                     document.getElementById('loader-lock').style.display = 'none';
-
-                    if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
-                        // SBLOCCO: Nasconde la schermata di pagamento e attiva i comandi SOS
+                    document.getElementById('status-text').innerText = "";
+                    
+                    if (data.status === 'ATTIVO') {
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                     } else {
-                        alert("❌ Verifica fallita: L'ID Business " + businessId + " non è registrato o risulta scaduto.");
+                        alert("❌ Licenza non attiva o scaduta per ID: " + businessId);
                     }
                 },
-                function() {
+                function(messaggioErrore) {
                     document.getElementById('btn-check').disabled = false;
                     document.getElementById('loader-lock').style.display = 'none';
-                    alert("⚠️ Impossibile raggiungere i server Google Sheets.");
+                    document.getElementById('status-text').innerText = "Dispositivo pronto per la verifica.";
+                    alert("⚠️ Nota: " + messaggioErrore + " Assicurati di aver pubblicato la Nuova Versione su Apps Script.");
                 }
             );
         }
 
-        // 2. Azione del pulsante SOS (Creazione Stanza Meet + Notifica Telegram)
         function richiediSos() {
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
@@ -137,39 +132,26 @@
                 { id: businessId, loc: locationId, loc_name: locationName, user: userName, action: 'sos' },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
-
-                    if (data.status === 'SCADUTO') {
-                        alert("⚠️ Sessione scaduta. Ritorno alla schermata di blocco.");
-                        document.getElementById('view-active').style.display = 'none';
-                        document.getElementById('view-lock').style.display = 'block';
-                        document.getElementById('btn-sos').disabled = false;
-                        return;
-                    }
-
                     if (data.url) {
-                        // Creazione del QR code dinamico per accedere alla videochiamata Meet dall'iPad o smartphone
                         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.url)}`;
                         document.getElementById('qr-image').src = qrUrl;
                         document.getElementById('qr-result').style.display = 'block';
-                        document.getElementById('btn-sos').innerText = "🚨 RICHIESTA INVIATA";
+                        document.getElementById('btn-sos').innerText = "🚨 SOS INVIATO";
                     } else {
-                        alert("Errore nella generazione della stanza Google Meet.");
+                        alert("Errore di creazione della stanza Meet.");
                         document.getElementById('btn-sos').disabled = false;
                     }
                 },
                 function() {
                     document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
-                    alert("⚠️ Errore di rete durante la richiesta SOS.");
+                    alert("Errore durante l'invio della richiesta SOS.");
                 }
             );
         }
 
-        // Esegue il controllo automatico silenzioso non appena Lightspeed apre l'interfaccia
         window.onload = function() {
-            if(businessId !== '') {
-                verificaLicenza();
-            }
+            if(businessId !== '') { verificaLicenza(); }
         };
     </script>
 </body>
