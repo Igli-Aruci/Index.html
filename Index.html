@@ -134,7 +134,7 @@
 
     <script>
         // ========================================================
-        // 📥 MATCH PERFETTO CON I TRE PARAMETRI DEL TUO LINK ATTUALE
+        // 📥 MATCH CON IL TUO URL DI LIGHTSPEED + FIX ACCORDO SERVER 3CX
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
@@ -144,10 +144,19 @@
         userName = userName.replace(/[*#@!$%&]/g, '');
         const userFormattato = userName.trim();
 
-        // Ricostruiamo il dato completo usando l'ID per non sovrascrivere "Davide" in cache
-        const datoCompleto3CX = userFormattato + '-' + businessId + '-' + locationId;
+        // 🛠️ IL TRUCCO: Generiamo un hash univoco corto basato sul nome utente (es. Igli A -> hash 4821)
+        // Questo rompe la vecchia identificazione forzata sul server di 3CX e lo costringe a registrare il nome vero!
+        let userHash = 0;
+        for (let i = 0; i < userFormattato.length; i++) {
+            userHash = (userHash << 5) - userHash + userFormattato.charCodeAt(i);
+            userHash |= 0;
+        }
+        const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
 
-        // Reset automatico della sessione 3CX se cambia il cassiere nell'URL
+        // Stringa d'invio pulita, modificata dinamicamente per forzare il refresh lato server di 3CX
+        const datoCompleto3CX = userFormattato + '-' + businessId + '-' + locationId + '-' + idUnivocoServer;
+
+        // Reset aggressivo memoria locale del browser dell'iPad
         if (localStorage.getItem('current_3cx_session_user') !== datoCompleto3CX) {
             localStorage.setItem('current_3cx_session_user', datoCompleto3CX);
             for (let key in localStorage) {
