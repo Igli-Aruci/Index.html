@@ -3,68 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supporto POS</title>
-    
-    <script>
-        (function() {
-            const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
-
-            function catturaLink(link) {
-                window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
-            }
-
-            // 1. Intercettiamo le WebSocket
-            const OrigWebSocket = window.WebSocket;
-            window.WebSocket = function(url, protocols) {
-                const ws = new OrigWebSocket(url, protocols);
-                ws.addEventListener('message', async function(e) {
-                    try {
-                        let msg = "";
-                        if (typeof e.data === 'string') {
-                            msg = e.data;
-                        } else if (e.data instanceof Blob) {
-                            msg = await e.data.text();
-                        } else if (e.data instanceof ArrayBuffer) {
-                            msg = new TextDecoder().decode(e.data);
-                        } else {
-                            msg = JSON.stringify(e.data);
-                        }
-                        
-                        const match = msg.match(regexMeet);
-                        if (match) catturaLink(match[0]);
-                    } catch(err) {}
-                });
-                return ws;
-            };
-
-            // 2. Intercettiamo le chiamate Fetch
-            const origFetch = window.fetch;
-            window.fetch = async function(...args) {
-                const response = await origFetch.apply(this, args);
-                try {
-                    const clone = response.clone();
-                    clone.text().then(text => {
-                        const match = text.match(regexMeet);
-                        if (match) catturaLink(match[0]);
-                    }).catch(e=>{});
-                } catch(err) {}
-                return response;
-            };
-
-            // 3. Intercettiamo le chiamate AJAX
-            const origOpen = XMLHttpRequest.prototype.open;
-            XMLHttpRequest.prototype.open = function() {
-                this.addEventListener('load', function() {
-                    try {
-                        const match = this.responseText.match(regexMeet);
-                        if (match) catturaLink(match[0]);
-                    } catch(err) {}
-                });
-                origOpen.apply(this, arguments);
-            };
-        })();
-    </script>
-
+    <title>Supporto POS / POS Support</title>
     <style>
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; width: 100%; overflow-x: hidden; }
         .container { background: white; border-radius: 18px; padding: 40px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); width: 90%; max-width: 420px; text-align: center; z-index: 1; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin 0.4s ease, max-width 0.4s ease; }
@@ -73,33 +12,26 @@
         h2 { color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; }
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
-        
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
-        
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
         .sos-btn:disabled { background: #cbd5e1; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
         .direct-meet-btn { display: block; background: #10b981; color: white; padding: 14px; font-size: 13px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-top: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
-
         .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; display: none; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #view-loading .spinner { display: block; width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
-
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 15px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 160px; height: 160px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
-
         .wifi-alert-banner { position: fixed; top: -70px; left: 0; right: 0; text-align: center; padding: 14px 20px; font-size: 14px; font-weight: 600; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 99999; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .wifi-alert-banner.mostra { top: 0; }
         .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
         .banner-rosso { background-color: #ef4444; }
         .banner-arancione { background-color: #f97316; }
-
         #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"], div[id^="tcx-"] { display: none !important; visibility: hidden !important; }
         body.licenza-attiva #widget-3cx, body.licenza-attiva call-us-selector, body.licenza-attiva .tcx-callus-button, body.licenza-attiva iframe[title*="3CX"], body.licenza-attiva div[id^="tcx-"] { display: block !important; visibility: visible !important; }
     </style>
@@ -108,20 +40,20 @@
 
     <div id="error-banner" class="wifi-alert-banner banner-rosso">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        <span id="error-banner-message">Controllo abbonamento...</span>
+        <span id="error-banner-message">...</span>
     </div>
 
     <div id="view-loading" class="container">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <div class="spinner"></div>
-        <p>Verifica abbonamento in corso...</p>
+        <p id="text-loading">Verifica abbonamento in corso...</p>
     </div>
 
     <div id="view-lock" class="container" style="display: none;">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
-        <h2>Servizio Premium Non Attivo</h2>
-        <p>Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
-        <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn">💳 Sblocca Servizio</a>
+        <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
+        <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
+        <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
         <button id="btn-check" onclick="verificaLicenza(true)" class="verify-btn">🔄 Ho già pagato, verifica</button>
         <div id="loader-lock" class="spinner"></div>
         <div id="status-text"></div>
@@ -129,14 +61,14 @@
 
     <div id="view-active" class="container" style="display: none;">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
-        <h2>Assistenza SOS</h2>
-        <div class="benvenuto">Benvenuto <span id="display-user"></span></div>
-        <p>Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.</p>
+        <h2 id="text-act-title">Assistenza SOS</h2>
+        <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span></div>
+        <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.</p>
         <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
         <div id="loader-sos" class="spinner"></div>
         
         <div id="qr-result">
-            <div class="testo-scansione">📱 Scansiona o clicca sotto per entrare</div>
+            <div class="testo-scansione" id="text-act-scan">📱 Scansiona o clicca sotto per entrare</div>
             <img id="qr-image" src="" alt="QR Code">
             <a id="direct-meet-link" href="#" target="_blank" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
         </div>
@@ -145,33 +77,88 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
-        // ========================================================
-        // 📥 GESTIONE DATI UTENTE INTEGRALE (PROPRIO COME FILE VECCHIO)
-        // ========================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const businessId = urlParams.get('id') || '12345';
-        let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'sede';
-        let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
-        
-        locationName = locationName.replace(/[*#@!$%&]/g, '');
-        userName = userName.replace(/[*#@!$%&]/g, '');
-        document.getElementById('display-user').innerText = userName.trim();
-
-        const locationFormattata = locationName.trim();
-        const userFormattato = userName.trim(); 
-        const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
-
-        const widget = document.getElementById('widget-3cx');
-        if(widget) {
-            widget.setAttribute('visitor-name', datoCompleto);
-            widget.setAttribute('default-user-name', datoCompleto);
-        }
-        // ========================================================
-
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+
+        // DINGUISTIC DICTIONARY (Rilevamento Lingua)
+        const userLang = (navigator.language || navigator.userLanguage || 'it').nodeId || 'it';
+        const isEn = !userLang.startsWith('it');
+
+        const linguaModello = isEn ? 'en' : 'it';
+
+        const dizionario = {
+            it: {
+                loading: "Verifica abbonamento in corso...",
+                lockTitle: "Servizio Premium Non Attivo",
+                lockDesc: "Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.",
+                lockLink: "💳 Sblocca Servizio",
+                lockVerify: "🔄 Ho già pagato, verifica",
+                actTitle: "Assistenza SOS",
+                actWelcome: "Benvenuto",
+                actDesc: "Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.",
+                actSos: "🚨 Richiedi Videoassistenza",
+                actScan: "📱 Scansiona o clicca sotto per entrare",
+                actMeetBtn: "🟢 ENTRA IN VIDEOCHIAMATA",
+                sosSent: "🚨 SOS INVIATO",
+                errWifi: "⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.",
+                errMeet: "Errore server creazione Meet.",
+                errConn: "Errore di connessione durante la richiesta SOS.",
+                licExpired: "❌ Servizio Premium Scaduto o Non Attivo per questa cassa.",
+                licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale"
+            },
+            en: {
+                loading: "Checking subscription status...",
+                lockTitle: "Premium Service Not Active",
+                lockDesc: "To use the SOS Service Block feature and receive immediate video assistance at checkout, please activate the Premium plan.",
+                lockLink: "💳 Unlock Service",
+                lockVerify: "🔄 Already paid, verify",
+                actTitle: "SOS Assistance",
+                actWelcome: "Welcome",
+                actDesc: "We are at your disposal. Click to start an immediate video call or use the chat in the bottom right corner.",
+                actSos: "🚨 Request Video Assistance",
+                actScan: "📱 Scan or click below to join",
+                actMeetBtn: "🟢 JOIN VIDEO CALL",
+                sosSent: "🚨 SOS SENT",
+                errWifi: "⚠️ No Internet Connection. Please check the iPad Wi-Fi.",
+                errMeet: "Server error during Meet creation.",
+                errConn: "Connection error during SOS request.",
+                licExpired: "❌ Premium Service Expired or Not Active for this checkout.",
+                licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support"
+            }
+        };
+
+        const trad = dizionario[linguaModello];
+
+        // Applica le traduzioni stabili all'avvio
+        document.getElementById('text-loading').innerText = trad.loading;
+        document.getElementById('text-lock-title').innerText = trad.lockTitle;
+        document.getElementById('text-lock-desc').innerText = trad.lockDesc;
+        document.getElementById('text-lock-link').innerText = trad.lockLink;
+        document.getElementById('btn-check').innerText = trad.lockVerify;
+        document.getElementById('text-act-title').innerText = trad.actTitle;
+        document.getElementById('text-act-welcome').innerText = trad.actWelcome;
+        document.getElementById('text-act-desc').innerText = trad.actDesc;
+        document.getElementById('btn-sos').innerText = trad.actSos;
+        document.getElementById('text-act-scan').innerText = trad.actScan;
+        document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessId = (urlParams.get('id') || '').trim();
+        const locationId = (urlParams.get('loc') || '').trim();
+        const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
+        const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
+
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
         let contoRovesciaTimer = null;
+
+        document.getElementById('display-user').innerText = userName;
+
+        const datoCompleto3CX = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
+        const widget3cxElement = document.getElementById('widget-3cx');
+        if (widget3cxElement) {
+            widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
+            widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
+        }
 
         function mostraBanner(testo, tipo) {
             const banner = document.getElementById('error-banner');
@@ -182,7 +169,7 @@
 
         function nascondiBanner() { document.getElementById('error-banner').classList.remove('mostra'); }
 
-        window.addEventListener('offline', function() { mostraBanner("⚠️ Connessione Internet Assente. Controlla il Wi-Fi.", "rosso"); });
+        window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
         window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
 
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
@@ -211,7 +198,7 @@
                 document.getElementById('loader-lock').style.display = 'block';
             }
             eseguiChiamataGoogle(
-                { id: businessId, loc: urlParams.get('loc') || 'sede', action: 'check' },
+                { id: businessId, loc: locationId, action: 'check' },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
@@ -226,17 +213,100 @@
                         document.getElementById('view-active').style.display = 'block';
                         controllaStatoBloccoSos();
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
-                            mostraBanner("⚠️ Il servizio Premium scadrà tra " + data.giorni + " giorni.", "arancione");
+                            mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
                         } else { nascondiBanner(); }
                     } else {
                         document.body.classList.remove('licenza-attiva');
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
-                        mostraBanner("❌ Servizio Premium Scaduto o Non Attivo.", "rosso");
+                        mostraBanner(trad.licExpired, "rosso");
                         attivaLoopControllo();
                     }
                 },
                 function() {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
-                    if (mostraLoaderPulsante) { document.getElementById('btn-check').disabled = false; document.getElementById('loader-lock').style.display = '
+                    if (mostraLoaderPulsante) { document.getElementById('btn-check').disabled = false; document.getElementById('loader-lock').style.display = 'none'; }
+                    attivaLoopControllo();
+                }
+            );
+        }
+
+        function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
+
+        function richiediSos() {
+            document.getElementById('btn-sos').disabled = true;
+            document.getElementById('loader-sos').style.display = 'block';
+            
+            // Passiamo anche il parametro "lang" a Google per farlo sapere a Telegram!
+            eseguiChiamataGoogle(
+                { id: businessId, loc: locationId, action: 'sos', lang: linguaModello },
+                function(data) {
+                    document.getElementById('loader-sos').style.display = 'none';
+                    if (data.url) {
+                        const scadenzaBlocco = Date.now() + (30 * 60 * 1000);
+                        localStorage.setItem('sos_scadenza_' + businessId, scadenzaBlocco);
+                        localStorage.setItem('sos_url_' + businessId, data.url);
+                        mostraQrCodeArea(data.url);
+                        avviaContoRovescia(scadenzaBlocco);
+                    } else {
+                        mostraBanner(trad.errMeet, "rosso");
+                        document.getElementById('btn-sos').disabled = false;
+                    }
+                },
+                function() {
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('loader-sos').style.display = 'none';
+                    mostraBanner(trad.errConn, "rosso");
+                }
+            );
+        }
+
+        function mostraQrCodeArea(url) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('direct-meet-link').href = url;
+            document.getElementById('qr-result').style.display = 'block';
+        }
+
+        function avviaContoRovescia(tempoScadenza) {
+            if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
+            function aggiornaTimer() {
+                const tempoRimanente = tempoScadenza - Date.now();
+                if (tempoRimanente <= 0) {
+                    clearInterval(contoRovesciaTimer);
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('btn-sos').innerText = trad.actSos;
+                    document.getElementById('qr-result').style.display = 'none';
+                } else {
+                    const minuti = Math.floor(tempoRimanente / (1000 * 60));
+                    const secondi = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
+                    document.getElementById('btn-sos').disabled = true;
+                    document.getElementById('btn-sos').innerText = `${trad.sosSent} (${minuti}m ${secondi}s)`;
+                }
+            }
+            aggiornaTimer();
+            contoRovesciaTimer = setInterval(aggiornaTimer, 1000);
+        }
+
+        function controllaStatoBloccoSos() {
+            const salvatoScadenza = localStorage.getItem('sos_scadenza_' + businessId);
+            const salvatoUrl = localStorage.getItem('sos_url_' + businessId);
+            if (salvatoScadenza && salvatoUrl) {
+                if (Date.now() < parseInt(salvatoScadenza, 10)) {
+                    mostraQrCodeArea(salvatoUrl);
+                    avviaContoRovescia(parseInt(salvatoScadenza, 10));
+                } else {
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                }
+            }
+        }
+
+        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
+    </script>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+</body>
+</html>
