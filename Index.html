@@ -206,7 +206,6 @@
                     }
                     
                     if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
-                        // LICENZA SBLOCCATA: Spegne il loop automatico
                         clearInterval(controlloAutomaticoTimer);
                         controlloAutomaticoTimer = null;
 
@@ -214,13 +213,13 @@
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                         
+                        // 🔔 TESTO AGGIORNATO QUI SOTTO
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
-                            mostraBanner("⚠️ Il servizio Premium scadrà tra " + data.giorni + " giorni. Rinnova per evitare blocchi in cassa.", "arancione");
+                            mostraBanner("⚠️ Il servizio Premium scadrà tra " + data.giorni + " giorni. Rinnova per avere assistenza in tempo reale", "arancione");
                         } else {
                             nascondiBanner();
                         }
                     } else {
-                        // LICENZA ANCORA BLOCCATA: Avvia o mantiene il loop automatico ogni 5 secondi
                         document.body.classList.remove('licenza-attiva');
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
@@ -241,7 +240,6 @@
             );
         }
 
-        // 🔄 FUNZIONE DI CONTROLLO AUTOMATICO RICORSIVO (OGNI 5 SECONDI)
         function attivaLoopControllo() {
             if (!controlloAutomaticoTimer) {
                 controlloAutomaticoTimer = setInterval(function() {
