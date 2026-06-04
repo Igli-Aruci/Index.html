@@ -288,3 +288,129 @@
                     staVerificando = false;
                     if (mostraLoaderPulsante) {
                         document.getElementById('btn-check').disabled = false;
+                        document.getElementById('loader-lock').style.display = 'none';
+                    }
+                    if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
+                        clearInterval(controlloAutomaticoTimer); controlloAutomaticoTimer = null;
+                        document.body.classList.add('licenza-attiva');
+                        document.getElementById('view-lock').style.display = 'none';
+                        document.getElementById('view-active').style.display = 'block';
+                        controllaStatoBloccoSos();
+                        if (data.status.startsWith('AVVISO_SCADENZA')) {
+                            mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
+                        } else { nascondiBanner(); }
+                    } else {
+                        document.body.classList.remove('licenza-attiva');
+                        document.getElementById('view-active').style.display = 'none';
+                        document.getElementById('view-lock').style.display = 'block';
+                        mostraBanner(trad.licExpired, "rosso");
+                        attivaLoopControllo();
+                    }
+                },
+                function() {
+                    document.getElementById('view-loading').style.display = 'none';
+                    staVerificando = false;
+                    if (mostraLoaderPulsante) { document.getElementById('btn-check').disabled = false; document.getElementById('loader-lock').style.display = 'none'; }
+                    attivaLoopControllo();
+                }
+            );
+        }
+
+        function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
+
+        function richiediSos() {
+            document.getElementById('btn-sos').disabled = true;
+            document.getElementById('loader-sos').style.display = 'block';
+            
+            eseguiChiamataGoogle(
+                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello },
+                function(data) {
+                    document.getElementById('loader-sos').style.display = 'none';
+                    if (data.url) {
+                        // 🟢 SBLOCCO ISTANTANEO: Impostato blocco di soli 2 secondi (2 * 1000ms)
+                        const scadenzaBlocco = Date.now() + (2 * 1000);
+                        localStorage.setItem('sos_scadenza_' + businessId, scadenzaBlocco);
+                        localStorage.setItem('sos_url_' + businessId, data.url);
+                        mostraQrCodeArea(data.url);
+                        avviaContoRovescia(scadenzaBlocco);
+                    } else {
+                        mostraBanner(trad.errMeet, "rosso");
+                        document.getElementById('btn-sos').disabled = false;
+                    }
+                },
+                function() {
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('loader-sos').style.display = 'none';
+                    mostraBanner(trad.errConn, "rosso");
+                }
+            );
+        }
+
+        function mostraQrCodeArea(url) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            document.getElementById('qr-image').src = qrUrl;
+            document.getElementById('direct-meet-link').href = url;
+            document.getElementById('qr-result').style.display = 'block';
+            
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    function riproduciTono(frequenza, inizio, durata) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
+                        osc.frequency.setValueAtTime(frequenza, inizio);
+                        gain.gain.setValueAtTime(0.5, inizio);
+                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
+                        osc.start(inizio); osc.stop(inizio + durata);
+                    }
+                    const adesso = ctx.currentTime;
+                    riproduciTono(880, adesso, 0.3);         
+                    riproduciTono(1046.50, adesso + 0.15, 0.4); 
+                }
+            } catch(e){}
+        }
+
+        function avviaContoRovescia(tempoScadenza) {
+            if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
+            function aggiornaTimer() {
+                const tempoRimanente = tempoScadenza - Date.now();
+                if (tempoRimanente <= 0) {
+                    clearInterval(contoRovesciaTimer);
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                    document.getElementById('btn-sos').disabled = false;
+                    document.getElementById('btn-sos').innerText = trad.actSos;
+                    document.getElementById('qr-result').style.display = 'none';
+                } else {
+                    const minutes = Math.floor(tempoRimanente / (1000 * 60));
+                    const seconds = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
+                    document.getElementById('btn-sos').disabled = true;
+                    document.getElementById('btn-sos').innerText = `${trad.sosSent} (${minutes}m ${seconds}s)`;
+                }
+            }
+            aggiornaTimer();
+            contoRovesciaTimer = setInterval(aggiornaTimer, 1000);
+        }
+
+        function controllaStatoBloccoSos() {
+            const salvatoScadenza = localStorage.getItem('sos_scadenza_' + businessId);
+            const salvatoUrl = localStorage.getItem('sos_url_' + businessId);
+            if (salvatoScadenza && salvatoUrl) {
+                if (Date.now() < parseInt(salvatoScadenza, 10)) {
+                    mostraQrCodeArea(salvatoUrl);
+                    avviaContoRovescia(parseInt(salvatoScadenza, 10));
+                } else {
+                    localStorage.removeItem('sos_scadenza_' + businessId);
+                    localStorage.removeItem('sos_url_' + businessId);
+                }
+            }
+        }
+
+        window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
+        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
+    </script>
+    <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
+</body>
+</html>
