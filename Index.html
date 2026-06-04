@@ -56,12 +56,11 @@
         .testo-scansione { font-size: 15px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 160px; height: 160px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
 
-        /* 🚨 BANNER NOTIFICA INTELLIGENTE (STILE WI-FI) */
+        /* BANNER NOTIFICA */
         .wifi-alert-banner { position: fixed; top: -70px; left: 0; right: 0; text-align: center; padding: 14px 20px; font-size: 14px; font-weight: 600; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 99999; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .wifi-alert-banner.mostra { top: 0; }
         .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
         
-        /* Varianti Colore Banner */
         .banner-rosso { background-color: #ef4444; }
         .banner-arancione { background-color: #f97316; }
 
@@ -88,7 +87,7 @@
         <h2>Servizio Premium Non Attivo</h2>
         <p>Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
         <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn">💳 Sblocca Servizio</a>
-        <button id="btn-check" onclick="verificaLicenza()" class="verify-btn">🔄 Ho già pagato, verifica</button>
+        <button id="btn-check" onclick="verificaLicenza(true)" class="verify-btn">🔄 Ho già pagato, verifica</button>
         <div id="loader-lock" class="spinner"></div>
         <div id="status-text"></div>
     </div>
@@ -119,6 +118,9 @@
         const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
         const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
 
+        let controlloAutomaticoTimer = null;
+        let staVerificando = false;
+
         document.getElementById('display-user').innerText = userName;
 
         const datoCompleto3CX = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
@@ -128,7 +130,6 @@
             widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
         }
 
-        // Gestione grafica dei Banner
         function mostraBanner(testo, tipo) {
             const banner = document.getElementById('error-banner');
             banner.className = "wifi-alert-banner " + (tipo === 'rosso' ? 'banner-rosso' : 'banner-arancione');
@@ -140,14 +141,13 @@
             document.getElementById('error-banner').classList.remove('mostra'); 
         }
 
-        // 📶 DETECTOR EVENTI WI-FI IN TEMPO REALE DELL'IPAD
         window.addEventListener('offline', function() {
             mostraBanner("⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.", "rosso");
         });
         
         window.addEventListener('online', function() {
             nascondiBanner();
-            verificaLicenza();
+            verificaLicenza(false);
         });
 
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
@@ -160,8 +160,8 @@
             const timeoutTimer = setTimeout(() => {
                 delete window[callbackName];
                 if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
-                callbackErrore("Timeout server Google Sheets.");
-            }, 8000);
+                callbackErrore("Timeout.");
+            }, 6000);
 
             window[callbackName] = function(data) {
                 clearTimeout(timeoutTimer);
@@ -177,59 +177,77 @@
             script.src = `${googleScriptUrl}?${queryParams.toString()}`;
             script.onerror = function() {
                 clearTimeout(timeoutTimer);
-                callbackErrore("Rete o server Google non raggiungibile.");
+                callbackErrore("Errore.");
                 delete window[callbackName];
                 if(document.getElementById(callbackName)) document.getElementById(callbackName).remove();
             };
             document.body.appendChild(script);
         }
 
-        function verificaLicenza() {
-            if (!navigator.onLine) {
-                document.getElementById('view-loading').style.display = 'none';
-                document.getElementById('view-lock').style.display = 'block';
-                mostraBanner("⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.", "rosso");
-                return;
-            }
+        function verificaLicenza(mostraLoaderPulsante = false) {
+            if (!navigator.onLine || !businessId || staVerificando) return;
 
-            if (!businessId) {
-                document.getElementById('view-loading').style.display = 'none';
-                document.getElementById('view-lock').style.display = 'block';
-                return;
+            staVerificando = true;
+
+            if (mostraLoaderPulsante) {
+                document.getElementById('btn-check').disabled = true;
+                document.getElementById('loader-lock').style.display = 'block';
             }
 
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
+                    staVerificando = false;
+                    
+                    if (mostraLoaderPulsante) {
+                        document.getElementById('btn-check').disabled = false;
+                        document.getElementById('loader-lock').style.display = 'none';
+                    }
                     
                     if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
+                        // LICENZA SBLOCCATA: Spegne il loop automatico
+                        clearInterval(controlloAutomaticoTimer);
+                        controlloAutomaticoTimer = null;
+
                         document.body.classList.add('licenza-attiva');
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                         
-                        // Controlla se lo script rimanda l'avviso di scadenza dei 7 giorni
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
-                            var giorniRimasti = data.giorni;
-                            mostraBanner("⚠️ Il servizio Premium scadrà tra " + giorniRimasti + " giorni. Rinnova per evitare blocchi in cassa.", "arancione");
+                            mostraBanner("⚠️ Il servizio Premium scadrà tra " + data.giorni + " giorni. Rinnova per evitare blocchi in cassa.", "arancione");
                         } else {
                             nascondiBanner();
                         }
                     } else {
+                        // LICENZA ANCORA BLOCCATA: Avvia o mantiene il loop automatico ogni 5 secondi
                         document.body.classList.remove('licenza-attiva');
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
                         mostraBanner("❌ Servizio Premium Scaduto o Non Attivo per questa cassa.", "rosso");
+
+                        attivaLoopControllo();
                     }
                 },
-                function(messaggioErrore) {
+                function() {
                     document.getElementById('view-loading').style.display = 'none';
-                    document.body.classList.remove('licenza-attiva');
-                    document.getElementById('view-active').style.display = 'none';
-                    document.getElementById('view-lock').style.display = 'block';
-                    mostraBanner("⚠️ " + messaggioErrore, "rosso");
+                    staVerificando = false;
+                    if (mostraLoaderPulsante) {
+                        document.getElementById('btn-check').disabled = false;
+                        document.getElementById('loader-lock').style.display = 'none';
+                    }
+                    attivaLoopControllo();
                 }
             );
+        }
+
+        // 🔄 FUNZIONE DI CONTROLLO AUTOMATICO RICORSIVO (OGNI 5 SECONDI)
+        function attivaLoopControllo() {
+            if (!controlloAutomaticoTimer) {
+                controlloAutomaticoTimer = setInterval(function() {
+                    verificaLicenza(false); 
+                }, 5000);
+            }
         }
 
         function richiediSos() {
@@ -265,7 +283,7 @@
                 document.getElementById('view-lock').style.display = 'block';
                 mostraBanner("⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.", "rosso");
             } else {
-                verificaLicenza(); 
+                verificaLicenza(false); 
             }
         };
     </script>
