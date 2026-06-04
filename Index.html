@@ -134,7 +134,7 @@
 
     <script>
         // ========================================================
-        // 📥 CONFIGURAZIONE CHIRURGICA DATI CHAT 3CX
+        // 📥 CONFIGURAZIONE CHIRURGICA DATI CHAT 3CX (SENZA SPAZI)
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
@@ -142,26 +142,26 @@
         let locationName = (urlParams.get('loc_name') || 'norivalmaster').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Pulizia stringhe
+        // Rimozione caratteri speciali
         userName = userName.replace(/[*#@!$%&]/g, '').trim();
-        locationName = locationName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+        locationName = locationName.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase().trim();
 
-        const userFormattato = userName.trim();
-        const locationFormattata = locationName.trim();
+        // 🛠️ RIMOZIONE TOTALE DEGLI SPAZI (replace(/\s+/g, ''))
+        const userSenzaSpazi = userName.replace(/\s+/g, '');
+        const locationSenzaSpazi = locationName.replace(/\s+/g, '');
 
-        // 🌟 STRINGA PULITA DA MOSTRARE IN CHAT: Utente - Business ID - Nome Negozio
-        const stringaVisibileChat = userFormattato + '-' + businessId + '-' + locationFormattata;
+        // 🌟 STRINGA PULITA SENZA SPAZI PER IL 3CX
+        const stringaVisibileChat = userSenzaSpazi + '-' + businessId + '-' + locationSenzaSpazi;
 
-        // 🛡️ CONTROLLO IN BACKGROUND: Usiamo internamente gli ID per resettare la cache
+        // Tracciamento interno per reset automatico cache
         let userHash = 0;
-        for (let i = 0; i < userFormattato.length; i++) {
-            userHash = (userHash << 5) - userHash + userFormattato.charCodeAt(i);
+        for (let i = 0; i < userSenzaSpazi.length; i++) {
+            userHash = (userHash << 5) - userHash + userSenzaSpazi.charCodeAt(i);
             userHash |= 0;
         }
         const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
-        const tracciamentoInterno = userFormattato + '-' + businessId + '-' + locationFormattata + '-' + locationId + '-' + idUnivocoServer;
+        const tracciamentoInterno = userSenzaSpazi + '-' + businessId + '-' + locationSenzaSpazi + '-' + locationId + '-' + idUnivocoServer;
 
-        // Reset automatico localstorage se cambia cassiere
         if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
             localStorage.setItem('current_3cx_session_user', tracciamentoInterno);
             for (let key in localStorage) {
@@ -171,7 +171,6 @@
             }
         }
 
-        // Iniettiamo il widget passando solo la stringa visibile pulita senza ID interni e codici hash
         const containerWidget = document.getElementById('container-widget-3cx');
         const selector3cx = document.createElement('call-us-selector');
         selector3cx.setAttribute('id', 'widget-3cx');
@@ -241,7 +240,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userFormattato;
+        document.getElementById('display-user').innerText = userName; // Mantiene lo spazio sul testo di benvenuto grafico
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
