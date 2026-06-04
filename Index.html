@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supporto POS</title>
     <style>
-        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; }
+        body, html { margin: 0; padding: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; box-sizing: border-box; position: relative; width: 100%; overflow-x: hidden; }
         
-        /* 📐 LAYOUT INTELLIGENTE PER SCHEDA ASSISTENZA SU IPAD */
+        /* 📐 CONFIGURAZIONE E ADATTAMENTO LAYOUT HARD-CODED PER SBLOCCO CHAT */
         .container { 
             background: white; 
             border-radius: 18px; 
@@ -17,16 +17,22 @@
             max-width: 420px; 
             text-align: center; 
             z-index: 1;
-            transition: all 0.3s ease-in-out;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin 0.4s ease, max-width 0.4s ease;
         }
 
-        /* Quando la licenza è attiva e siamo su iPad/Tablet in orizzontale, spostiamo la scheda a sinistra */
+        /* FORZATURA STRUTTURALE: Se siamo su tablet in orizzontale e la licenza è sbloccata, spingiamo il box a sinistra */
         @media screen and (min-width: 768px) and (orientation: landscape) {
             body.licenza-attiva {
-                justify-content: flex-start; /* Allinea a sinistra */
+                display: block !important; /* Disattiva la centratura Flexbox nativa del body */
             }
-            body.licenza-attiva .container {
-                margin-left: 10%; /* Sposta la scheda lasciando spazio vuoto a destra per il 3CX */
+            body.licenza-attiva #view-active {
+                max-width: 380px; /* Lo rendiamo leggermente più stretto e compatto */
+                margin-top: 5vh;  /* Centratura verticale manuale */
+                margin-left: 8vw; /* Spinta fissa sul lato sinistro */
+                position: absolute;
+                top: 50%;
+                left: 0;
+                transform: translateY(-50%); /* Allineamento verticale perfetto */
             }
         }
 
@@ -35,41 +41,41 @@
         .benvenuto { color: #3b82f6; font-size: 20px; font-weight: 600; margin-bottom: 20px; }
         p { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 25px; }
         
-        /* Bottoni */
+        /* Pulsanti e Interfaccia */
         .stripe-btn { display: block; background: #635bff; color: white; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px; text-decoration: none; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2); }
         .verify-btn { display: block; background: #f1f5f9; color: #475569; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; text-transform: uppercase; cursor: pointer; }
         .verify-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .sos-btn { display: block; width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
         
-        /* Loader Spinner */
+        /* Spinner e Stati di attesa */
         .spinner { width: 26px; height: 26px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto 0 auto; }
         #status-text { font-size: 13px; color: #94a3b8; margin-top: 10px; font-weight: 500; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Schermata Caricamento Iniziale */
-        #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto !important; } /* Rimane centrato */
+        #view-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #view-loading .spinner { width: 45px; height: 45px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 20px; font-size: 16px; font-weight: 600; color: #475569; }
 
-        /* Area QR Code */
+        /* Contenitore codici QR */
         #qr-result { margin-top: 25px; display: none; }
         .testo-scansione { font-size: 18px; color: #1e293b; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; }
         #qr-image { width: 200px; height: 200px; border-radius: 12px; border: 4px solid #10b981; padding: 5px; background: white; }
 
-        /* Banner Stile Wi-Fi */
+        /* Banner d'allerta */
         .wifi-alert-banner { position: absolute; top: -60px; left: 0; right: 0; background-color: #ef4444; color: white; text-align: center; padding: 12px 20px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .wifi-alert-banner.mostra { top: 0; }
         .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
 
-        /* Controllo visibilità forzata widget 3CX */
-        #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"] {
+        /* Gestione visibilità widget 3CX */
+        #widget-3cx, call-us-selector, .tcx-callus-button, iframe[title*="3CX"], div[id^="tcx-"] {
             display: none !important;
             visibility: hidden !important;
         }
         body.licenza-attiva #widget-3cx, 
         body.licenza-attiva call-us-selector, 
         body.licenza-attiva .tcx-callus-button,
-        body.licenza-attiva iframe[title*="3CX"] {
+        body.licenza-attiva iframe[title*="3CX"],
+        body.licenza-attiva div[id^="tcx-"] {
             display: block !important;
             visibility: visible !important;
         }
@@ -88,7 +94,7 @@
         <p>Verifica abbonamento in corso...</p>
     </div>
 
-    <div id="view-lock" class="container" style="display: none; margin: 0 auto;">
+    <div id="view-lock" class="container" style="display: none;">
         <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
         <h2>Servizio Premium Non Attivo</h2>
         <p>Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
@@ -148,7 +154,7 @@
                 callbackErrore("Timeout server Google.");
             }, 8000);
 
-            window[callbackName] = function(data) {
+            window[urlParams] = window[callbackName] = function(data) {
                 clearTimeout(timeoutTimer);
                 callbackSuccesso(data);
                 delete window[callbackName];
