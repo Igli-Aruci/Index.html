@@ -7,7 +7,7 @@
     
     <script>
         // ========================================================
-        // 📡 1. INTERCETTAZIONE AUTOMATICA WEBSOCKET DAL FILE VECCHIO
+        // 📡 INTERCETTAZIONE AUTOMATICA WEBSOCKET DAL FILE VECCHIO
         // ========================================================
         (function() {
             const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
@@ -133,9 +133,38 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
-        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        // ========================================================
+        // 📥 MATCH PERFETTO CON I TRE PARAMETRI DEL TUO LINK ATTUALE
+        // ========================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const businessId = (urlParams.get('id') || '12345').trim();
+        const locationId = (urlParams.get('loc') || 'sede').trim();
+        let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // DINGUISTIC DICTIONARY (Rilevamento Lingua)
+        userName = userName.replace(/[*#@!$%&]/g, '');
+        const userFormattato = userName.trim();
+
+        // Ricostruiamo il dato completo usando l'ID per non sovrascrivere "Davide" in cache
+        const datoCompleto3CX = userFormattato + '-' + businessId + '-' + locationId;
+
+        // Reset automatico della sessione 3CX se cambia il cassiere nell'URL
+        if (localStorage.getItem('current_3cx_session_user') !== datoCompleto3CX) {
+            localStorage.setItem('current_3cx_session_user', datoCompleto3CX);
+            for (let key in localStorage) {
+                if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus')) {
+                    localStorage.removeItem(key);
+                }
+            }
+        }
+
+        const widget3cxElement = document.getElementById('widget-3cx');
+        if (widget3cxElement) {
+            widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
+            widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
+        }
+        // ========================================================
+
+        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const userLang = (navigator.language || navigator.userLanguage || 'it');
         const isEn = !userLang.startsWith('it');
         const linguaModello = isEn ? 'en' : 'it';
@@ -183,7 +212,6 @@
 
         const trad = dizionario[linguaModello];
 
-        // Applica le traduzioni stabili all'avvio
         document.getElementById('text-loading').innerText = trad.loading;
         document.getElementById('text-lock-title').innerText = trad.lockTitle;
         document.getElementById('text-lock-desc').innerText = trad.lockDesc;
@@ -195,43 +223,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-
-        // ========================================================
-        // 📥 GESTIONE INTERFACCIA E PARAMETRI DETTAGLIATI 3CX
-        // ========================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const businessId = (urlParams.get('id') || '').trim();
-        const locationId = (urlParams.get('loc') || '').trim();
-        
-        let locationName = urlParams.get('loc_name') || urlParams.get('loc') || 'Sede';
-        let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
-
-        // Pulizia caratteri speciali identica al file vecchio per mantenere intatti spazi e maiuscole
-        locationName = locationName.replace(/[*#@!$%&]/g, '');
-        userName = userName.replace(/[*#@!$%&]/g, '');
-        
-        const locationFormattata = locationName.trim();
-        const userFormattato = userName.trim();
-        const datoCompleto3CX = userFormattato + '-' + businessId + '-' + locationFormattata;
-
         document.getElementById('display-user').innerText = userFormattato;
-
-        // Reset forzato del widget in caso di cambio operatore cassa
-        if (localStorage.getItem('current_3cx_session_user') !== datoCompleto3CX) {
-            localStorage.setItem('current_3cx_session_user', datoCompleto3CX);
-            for (let key in localStorage) {
-                if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus')) {
-                    localStorage.removeItem(key);
-                }
-            }
-        }
-
-        const widget3cxElement = document.getElementById('widget-3cx');
-        if (widget3cxElement) {
-            widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
-            widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
-        }
-        // ========================================================
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -344,7 +336,6 @@
             document.getElementById('direct-meet-link').href = url;
             document.getElementById('qr-result').style.display = 'block';
             
-            // Riproduzione sintesi sonora originale (Ding)
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
