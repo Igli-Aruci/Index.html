@@ -77,22 +77,25 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
-        // 🛠️ 1. LEGGIAMO SUBITO I PARAMETRI DALL'URL (SPOSTATO IN CIMA PER SICUREZZA)
+        // 📥 1. ESTRAZIONE DATI URL IPAD
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '').trim();
         const locationId = (urlParams.get('loc') || '').trim();
+        
+        // Se non viene passato loc_name prende loc, se manca mette Sede
         const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
         const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
 
-        // 🛠️ 2. CONFIGURIAMO SUBITO IL 3CX CON IL NOME UTENTE DINAMICO CARICATO
-        const datoCompleto3CX = userName + '-' + businessId + '-' + locationName.replace(/\s+/g, '').toLowerCase();
+        // 🛠️ 2. OTTIMIZZAZIONE STRINGA 3CX: Mantiene maiuscole, spazi e formato originale!
+        const datoCompleto3CX = userName + ' - ' + businessId + ' - ' + locationName;
+        
         const widget3cxElement = document.getElementById('widget-3cx');
         if (widget3cxElement) {
             widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
             widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
         }
 
-        // 🌐 3. GESTIONE LINGUE E TRADUZIONI
+        // 🌐 3. LINGUE E CODICE APPLICAZIONE
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const userLang = (navigator.language || navigator.userLanguage || 'it');
         const isEn = !userLang.startsWith('it');
@@ -232,6 +235,7 @@
 
         function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
 
+        function unskilledSos() {}
         function richiediSos() {
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
