@@ -134,7 +134,7 @@
 
     <script>
         // ========================================================
-        // 📥 MATCH CON IL TUO URL DI LIGHTSPEED + LOCATION NAME DOPO IL BUSINESS ID
+        // 📥 CONFIGURAZIONE CHIRURGICA DATI CHAT 3CX
         // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
@@ -142,24 +142,28 @@
         let locationName = (urlParams.get('loc_name') || 'norivalmaster').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
-        // Pulizia caratteri speciali
+        // Pulizia stringhe
         userName = userName.replace(/[*#@!$%&]/g, '').trim();
         locationName = locationName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
 
-        // Generazione Hash di sicurezza per forzare l'aggiornamento lato server 3CX
+        const userFormattato = userName.trim();
+        const locationFormattata = locationName.trim();
+
+        // 🌟 STRINGA PULITA DA MOSTRARE IN CHAT: Utente - Business ID - Nome Negozio
+        const stringaVisibileChat = userFormattato + '-' + businessId + '-' + locationFormattata;
+
+        // 🛡️ CONTROLLO IN BACKGROUND: Usiamo internamente gli ID per resettare la cache
         let userHash = 0;
-        for (let i = 0; i < userName.length; i++) {
-            userHash = (userHash << 5) - userHash + userName.charCodeAt(i);
+        for (let i = 0; i < userFormattato.length; i++) {
+            userHash = (userHash << 5) - userHash + userFormattato.charCodeAt(i);
             userHash |= 0;
         }
         const idUnivocoServer = Math.abs(userHash).toString(36).substring(0, 4).toUpperCase();
+        const tracciamentoInterno = userFormattato + '-' + businessId + '-' + locationFormattata + '-' + locationId + '-' + idUnivocoServer;
 
-        // 📍 NUOVA STRUTTURA: NomeUtente - BusinessId - LocationName - LocationId - Hash
-        const datoCompleto3CX = userName + '-' + businessId + '-' + locationName + '-' + locationId + '-' + idUnivocoServer;
-
-        // Reset aggressivo LocalStorage dell'iPad se cambia l'utente
-        if (localStorage.getItem('current_3cx_session_user') !== datoCompleto3CX) {
-            localStorage.setItem('current_3cx_session_user', datoCompleto3CX);
+        // Reset automatico localstorage se cambia cassiere
+        if (localStorage.getItem('current_3cx_session_user') !== tracciamentoInterno) {
+            localStorage.setItem('current_3cx_session_user', tracciamentoInterno);
             for (let key in localStorage) {
                 if (key.startsWith('tcx-') || key.includes('3cx') || key.startsWith('callus') || key.startsWith('3cx-')) {
                     localStorage.removeItem(key);
@@ -167,14 +171,14 @@
             }
         }
 
-        // Creazione dinamica del tag 3CX prima del caricamento dello script esterno
+        // Iniettiamo il widget passando solo la stringa visibile pulita senza ID interni e codici hash
         const containerWidget = document.getElementById('container-widget-3cx');
         const selector3cx = document.createElement('call-us-selector');
         selector3cx.setAttribute('id', 'widget-3cx');
         selector3cx.setAttribute('phonesystem-url', 'https://norival.my3cx.it');
         selector3cx.setAttribute('party', 'LiveChat385165');
-        selector3cx.setAttribute('visitor-name', datoCompleto3CX);
-        selector3cx.setAttribute('default-user-name', datoCompleto3CX);
+        selector3cx.setAttribute('visitor-name', stringaVisibileChat);
+        selector3cx.setAttribute('default-user-name', stringaVisibileChat);
         containerWidget.appendChild(selector3cx);
         // ========================================================
 
@@ -237,7 +241,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userName;
+        document.getElementById('display-user').innerText = userFormattato;
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -360,7 +364,7 @@
                         osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine';
                         osc.frequency.setValueAtTime(frequenza, inizio);
                         gain.gain.setValueAtTime(0.5, inizio);
-                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + duration);
+                        gain.gain.exponentialRampToValueAtTime(0.01, inizio + durata);
                         osc.start(inizio); osc.stop(inizio + durata);
                     }
                     const adesso = ctx.currentTime;
