@@ -77,25 +77,31 @@
     <call-us-selector id="widget-3cx" phonesystem-url="https://norival.my3cx.it" party="LiveChat385165"></call-us-selector>
 
     <script>
-        // 📥 1. ESTRAZIONE DATI URL IPAD
+        // ==========================================
+        // 📥 1. REPLICATE LE IMPOSTAZIONI ORIGINALI 3CX
+        // ==========================================
         const urlParams = new URLSearchParams(window.location.search);
-        const businessId = (urlParams.get('id') || '').trim();
-        const locationId = (urlParams.get('loc') || '').trim();
+        const businessId = urlParams.get('id') || '12345';
+        let locationName = urlParams.get('loc') || 'sede';
+        let userName = urlParams.get('user') || urlParams.get('username') || 'Utente';
         
-        // Se non viene passato loc_name prende loc, se manca mette Sede
-        const locationName = (urlParams.get('loc_name') || urlParams.get('loc') || 'Sede').trim();
-        const userName = (urlParams.get('user') || urlParams.get('username') || 'Utente').trim();
+        // Pulisce i caratteri speciali preservando maiuscole, minuscole e spazi reali
+        locationName = locationName.replace(/[*#@!$%&]/g, '');
+        userName = userName.replace(/[*#@!$%&]/g, '');
 
-        // 🛠️ 2. OTTIMIZZAZIONE STRINGA 3CX: Mantiene maiuscole, spazi e formato originale!
-        const datoCompleto3CX = userName + ' - ' + businessId + ' - ' + locationName;
-        
-        const widget3cxElement = document.getElementById('widget-3cx');
-        if (widget3cxElement) {
-            widget3cxElement.setAttribute('visitor-name', datoCompleto3CX);
-            widget3cxElement.setAttribute('default-user-name', datoCompleto3CX);
+        const locationFormattata = locationName.trim();
+        const userFormattato = userName.trim(); 
+        const datoCompleto = userFormattato + '-' + businessId + '-' + locationFormattata;
+
+        const widget = document.getElementById('widget-3cx');
+        if(widget) {
+            widget.setAttribute('visitor-name', datoCompleto);
+            widget.setAttribute('default-user-name', datoCompleto);
         }
 
-        // 🌐 3. LINGUE E CODICE APPLICAZIONE
+        // ==========================================
+        // 🌐 2. CODICE DI STRUTTURA E TRADUZIONI
+        // ==========================================
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const userLang = (navigator.language || navigator.userLanguage || 'it');
         const isEn = !userLang.startsWith('it');
@@ -155,7 +161,7 @@
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
-        document.getElementById('display-user').innerText = userName;
+        document.getElementById('display-user').innerText = userFormattato;
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -235,7 +241,6 @@
 
         function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
 
-        function unskilledSos() {}
         function richiediSos() {
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
