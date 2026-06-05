@@ -211,6 +211,11 @@
         .ticket-sub { margin-top: 10px; font-size: 13px; color: rgba(15, 23, 42, 0.60); font-weight: 800; }
         .ticket-sub strong { color: rgba(15, 23, 42, 0.88); }
 
+        .email-field { width: 100%; text-align: left; margin: 6px 0 10px; }
+        .email-label { display: block; font-size: 12px; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(15, 23, 42, 0.55); margin: 0 0 6px; }
+        .email-input { width: 100%; min-height: 54px; border-radius: 16px; border: 1px solid rgba(15, 23, 42, 0.12); background: rgba(15, 23, 42, 0.03); padding: 12px 14px; font-size: 14px; font-weight: 850; outline: none; color: rgba(15, 23, 42, 0.88); }
+        .email-input:focus { border-color: rgba(59, 130, 246, 0.55); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14); background: #fff; }
+
         .stripe-btn {
             display: block;
             width: 100%;
@@ -379,7 +384,11 @@
                         </div>
                         <div id="ticket-sub" class="ticket-sub"></div>
                     </div>
-                    <button id="btn-sos" onclick="richiediSos()" class="sos-btn">🚨 Richiedi Videoassistenza</button>
+                    <div class="email-field">
+                        <label id="text-act-email-label" class="email-label" for="input-email">Inserisci la tua Email</label>
+                        <input id="input-email" class="email-input" type="email" autocomplete="email" inputmode="email" placeholder="email@esempio.it">
+                    </div>
+                    <button id="btn-sos" onclick="richiediSos()" class="sos-btn" disabled>🚨 Richiedi Videoassistenza</button>
                     <div id="loader-sos" class="spinner"></div>
 
                     <div id="qr-result">
@@ -458,6 +467,8 @@
                 actTitle: "Assistenza SOS",
                 actWelcome: "Benvenuto",
                 actDesc: "Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.",
+                actEmailLabel: "Inserisci la tua Email",
+                actEmailPlaceholder: "email@esempio.it",
                 actSos: "🚨 Richiedi Videoassistenza",
                 actScan: "📱 Scansiona o clicca sotto per entrare",
                 actMeetBtn: "🟢 ENTRA IN VIDEOCHIAMATA",
@@ -477,6 +488,8 @@
                 actTitle: "SOS Assistance",
                 actWelcome: "Welcome",
                 actDesc: "We are at your disposal. Click to start an immediate video call or use the chat in the bottom right corner.",
+                actEmailLabel: "Enter your Email",
+                actEmailPlaceholder: "email@example.com",
                 actSos: "🚨 Request Video Assistance",
                 actScan: "📱 Scan or click below to join",
                 actMeetBtn: "🟢 JOIN VIDEO CALL",
@@ -499,6 +512,8 @@
         document.getElementById('text-act-title').innerText = trad.actTitle;
         document.getElementById('text-act-welcome').innerText = trad.actWelcome;
         document.getElementById('text-act-desc').innerText = trad.actDesc;
+        document.getElementById('text-act-email-label').innerText = trad.actEmailLabel;
+        document.getElementById('input-email').placeholder = trad.actEmailPlaceholder;
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
@@ -516,6 +531,34 @@
         }
 
         function nascondiBanner() { document.getElementById('error-banner').classList.remove('mostra'); }
+
+        function emailValidaPerSos_() {
+            const input = document.getElementById('input-email');
+            if (!input) return false;
+            const value = String(input.value || '').trim();
+            if (!value) return false;
+            return input.checkValidity();
+        }
+
+        function aggiornaStatoPulsanteSos_() {
+            const btn = document.getElementById('btn-sos');
+            if (!btn) return;
+
+            const token = localStorage.getItem('sos_ticket_' + businessId);
+            if (token) {
+                btn.disabled = true;
+                return;
+            }
+
+            const testo = String(btn.innerText || '');
+            const sosGiaInviato = (testo === trad.sosSent) || testo.startsWith(trad.sosSent);
+            if (sosGiaInviato) {
+                btn.disabled = true;
+                return;
+            }
+
+            btn.disabled = !emailValidaPerSos_();
+        }
 
         window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
         window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
@@ -561,12 +604,12 @@
                         document.getElementById('view-lock').style.display = 'none';
                         document.getElementById('view-active').style.display = 'block';
                         
-                        document.getElementById('btn-sos').disabled = false;
                         document.getElementById('btn-sos').innerText = trad.actSos;
                         document.getElementById('qr-result').style.display = 'none';
                         setQrVisibile(false);
                         if (contoRovesciaTimer) { clearInterval(contoRovesciaTimer); contoRovesciaTimer = null; }
                         ripristinaTicketSePresente();
+                        aggiornaStatoPulsanteSos_();
 
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
                             mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
@@ -592,11 +635,16 @@
         function attivaLoopControllo() { if (!controlloAutomaticoTimer) { controlloAutomaticoTimer = setInterval(function() { verificaLicenza(false); }, 5000); } }
 
         function richiediSos() {
+            if (!emailValidaPerSos_()) {
+                aggiornaStatoPulsanteSos_();
+                return;
+            }
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
             
+            const emailCliente = String(document.getElementById('input-email').value || '').trim();
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello },
+                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello, email: emailCliente },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
@@ -607,15 +655,15 @@
                         document.getElementById('btn-sos').innerText = trad.sosSent;
                         if (data.ticket) avviaPollingTicket(data.ticket);
                     } else {
-                        mostraBanner(trad.errMeet, "rosso");
-                        document.getElementById('btn-sos').disabled = false;
+                        mostraBanner(data && data.messaggio ? String(data.messaggio) : trad.errMeet, "rosso");
+                        aggiornaStatoPulsanteSos_();
                         setQrVisibile(false);
                     }
                 },
                 function() {
-                    document.getElementById('btn-sos').disabled = false;
                     document.getElementById('loader-sos').style.display = 'none';
                     mostraBanner(trad.errConn, "rosso");
+                    aggiornaStatoPulsanteSos_();
                     setQrVisibile(false);
                 }
             );
@@ -736,9 +784,9 @@
                     clearInterval(contoRovesciaTimer);
                     localStorage.removeItem('sos_scadenza_' + businessId);
                     localStorage.removeItem('sos_url_' + businessId);
-                    document.getElementById('btn-sos').disabled = false;
                     document.getElementById('btn-sos').innerText = trad.actSos;
                     document.getElementById('qr-result').style.display = 'none';
+                    aggiornaStatoPulsanteSos_();
                 } else {
                     const minutes = Math.floor(tempoRimanente / (1000 * 60));
                     const seconds = Math.floor((tempoRimanente % (1000 * 60)) / 1000);
@@ -798,11 +846,11 @@
                             pollingTicketTimer = null;
                             localStorage.removeItem('sos_ticket_' + businessId);
                             localStorage.removeItem('sos_url_' + businessId);
-                            document.getElementById('btn-sos').disabled = false;
                             document.getElementById('btn-sos').innerText = trad.actSos;
                             document.getElementById('qr-result').style.display = 'none';
                             aggiornaTicketBar('', '', '');
                             setQrVisibile(false);
+                            aggiornaStatoPulsanteSos_();
                             return;
                         }
                         document.getElementById('btn-sos').disabled = true;
@@ -827,11 +875,27 @@
                 document.getElementById('btn-sos').innerText = trad.sosSent;
                 aggiornaTicketBar('OPEN', '', '');
                 avviaPollingTicket(token);
+            } else {
+                aggiornaStatoPulsanteSos_();
             }
         }
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
-        window.onload = function() { if (!navigator.onLine) { document.getElementById('view-loading').style.display = 'none'; document.getElementById('view-lock').style.display = 'block'; mostraBanner(trad.errWifi, "rosso"); } else { verificaLicenza(false); } };
+        window.onload = function() {
+            const emailInput = document.getElementById('input-email');
+            if (emailInput) {
+                emailInput.addEventListener('input', aggiornaStatoPulsanteSos_);
+                emailInput.addEventListener('change', aggiornaStatoPulsanteSos_);
+            }
+            aggiornaStatoPulsanteSos_();
+            if (!navigator.onLine) {
+                document.getElementById('view-loading').style.display = 'none';
+                document.getElementById('view-lock').style.display = 'block';
+                mostraBanner(trad.errWifi, "rosso");
+            } else {
+                verificaLicenza(false);
+            }
+        };
     </script>
     <script defer src="https://downloads-global.3cx.com/downloads/livechatandtalk/v1/callus.js" id="tcx-callus-js" charset="utf-8"></script>
 </body>
