@@ -25,8 +25,18 @@
         (function() {
             const regexMeet = /meet\.google\.com\/[a-z0-9-]+/i;
 
+            function normalizzaUrlMeet(url) {
+                const u = String(url || "").trim();
+                if (!u) return "";
+                if (/^https?:\/\//i.test(u)) return u;
+                if (/^meet\.google\.com\//i.test(u)) return "https://" + u;
+                return u;
+            }
+
             function catturaLink(link) {
-                window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: link }));
+                const norm = normalizzaUrlMeet(link);
+                if (!norm) return;
+                window.dispatchEvent(new CustomEvent('LinkIntercettato', { detail: norm }));
             }
 
             const OrigWebSocket = window.WebSocket;
@@ -352,7 +362,7 @@
                     <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
                     <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
                     <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
-                    <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
+                    <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" rel="noopener noreferrer" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
                     <button id="btn-check" onclick="verificaLicenza(true)" class="verify-btn">🔄 Ho già pagato, verifica</button>
                     <div id="loader-lock" class="spinner"></div>
                     <div id="status-text"></div>
@@ -624,9 +634,13 @@
         }
 
         function mostraQrCodeArea(url) {
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
+            let finalUrl = String(url || "").trim();
+            if (finalUrl && !/^https?:\/\//i.test(finalUrl) && /^meet\.google\.com\//i.test(finalUrl)) {
+                finalUrl = "https://" + finalUrl;
+            }
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(finalUrl)}`;
             document.getElementById('qr-image').src = qrUrl;
-            document.getElementById('direct-meet-link').href = url;
+            document.getElementById('direct-meet-link').href = finalUrl;
             document.getElementById('qr-result').style.display = 'block';
             setQrVisibile(true);
             
@@ -651,13 +665,25 @@
         }
 
         function apriMeet(url) {
+            const finalUrl = String(url || "").trim();
+            if (!finalUrl || finalUrl === '#') return;
             try {
-                const w = window.open(url, '_blank');
-                if (w) return;
+                const a = document.createElement('a');
+                a.href = finalUrl;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                return;
             } catch (e) {}
             try {
-                window.location.href = url;
+                const w = window.open(finalUrl, '_blank');
+                if (w) return;
             } catch (e2) {}
+            try {
+                window.location.assign(finalUrl);
+            } catch (e3) {}
         }
 
         (function() {
@@ -669,6 +695,37 @@
                     if (url && url !== '#') apriMeet(url);
                 });
             }
+        })();
+
+        function apriLinkEsterno(url) {
+            const finalUrl = String(url || "").trim();
+            if (!finalUrl || finalUrl === '#') return;
+            try {
+                const a = document.createElement('a');
+                a.href = finalUrl;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                return;
+            } catch (e) {}
+            try {
+                const w = window.open(finalUrl, '_blank');
+                if (w) return;
+            } catch (e2) {}
+            try {
+                window.location.assign(finalUrl);
+            } catch (e3) {}
+        }
+
+        (function() {
+            const btn = document.getElementById('text-lock-link');
+            if (!btn) return;
+            btn.addEventListener('click', function(ev) {
+                ev.preventDefault();
+                apriLinkEsterno(btn.href);
+            });
         })();
 
         function avviaContoRovescia(tempoScadenza) {
