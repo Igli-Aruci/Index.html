@@ -120,6 +120,7 @@
             justify-content: space-between;
             color: rgba(255,255,255,0.92);
         }
+        body:not(.licenza-attiva) .shell-header { justify-content: center; }
 
         .shell-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
         .shell-brand img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.28)); }
@@ -171,9 +172,15 @@
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
         }
+        @media (max-height: 520px) {
+            .container { padding: 16px; }
+            #view-loading { min-height: 340px; }
+            #view-active { min-height: 340px; }
+        }
 
-        #view-active { max-width: 760px; }
-        #view-active.qr-visibile { max-width: 660px; }
+        #view-active { max-width: 760px; min-height: 420px; display: flex; flex-direction: column; justify-content: center; }
+        body.licenza-attiva.qr-visibile #view-active { justify-content: flex-start; }
+        #view-active.qr-visibile { max-width: 660px; min-height: 0; }
 
         .brand-logo { max-width: 220px; height: auto; margin: 0 auto 14px auto; display: block; }
         h2 { margin: 0 0 8px 0; font-size: clamp(20px, 2vw, 24px); font-weight: 950; letter-spacing: -0.02em; color: var(--text); }
@@ -258,6 +265,8 @@
             letter-spacing: 0.08em;
             box-shadow: 0 16px 40px rgba(16, 185, 129, 0.22);
         }
+
+        .stripe-btn, .verify-btn, .sos-btn, .direct-meet-btn { min-height: 54px; }
 
         .spinner { width: 26px; height: 26px; border: 3px solid rgba(148, 163, 184, 0.65); border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 18px auto 0 auto; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
