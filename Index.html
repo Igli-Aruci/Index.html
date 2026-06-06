@@ -162,10 +162,13 @@
             align-items: center;
             justify-content: center;
             gap: 14px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 12px;
         }
 
         body.licenza-attiva.qr-visibile .left-panel { justify-content: flex-start; }
-        body.licenza-attiva.qr-visibile .left-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+        body.licenza-attiva.qr-visibile .left-panel { justify-content: flex-start; }
 
         body.sos-focus .chat-panel { display: none !important; }
         body.sos-focus .shell-main { grid-template-columns: 1fr !important; }
@@ -185,6 +188,7 @@
             text-align: center;
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
+            overflow-wrap: anywhere;
         }
         @media (max-height: 520px) {
             .container { padding: 16px; }
@@ -317,7 +321,7 @@
         .lock-note { margin: 10px 0 12px; padding: 12px 12px; border-radius: 16px; background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.10); text-align: left; font-size: 13px; color: rgba(15, 23, 42, 0.72); font-weight: 850; }
 
         .modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 999999; }
-        .modal-card { width: min(720px, 100%); background: rgba(255,255,255,0.95); border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 22px; box-shadow: 0 40px 120px rgba(0,0,0,0.45); padding: 18px; text-align: left; }
+        .modal-card { width: min(720px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: rgba(255,255,255,0.95); border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 22px; box-shadow: 0 40px 120px rgba(0,0,0,0.45); padding: 18px; text-align: left; }
         .modal-title { font-size: 18px; font-weight: 1000; color: rgba(15, 23, 42, 0.92); margin: 0 0 6px; }
         .modal-sub { font-size: 13px; color: rgba(15, 23, 42, 0.68); font-weight: 850; margin: 0 0 14px; }
         .plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -527,9 +531,9 @@
         // ========================================================
 
         const googleScriptUrl = window.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        const forcedLang = String(urlParams.get('lang') || '').trim().toLowerCase();
         const userLang = (navigator.language || navigator.userLanguage || 'it');
-        const isEn = !userLang.startsWith('it');
-        const linguaModello = isEn ? 'en' : 'it';
+        const linguaModello = (forcedLang === 'it' || forcedLang === 'en') ? forcedLang : (!userLang.startsWith('it') ? 'en' : 'it');
 
         const dizionario = {
             it: {
