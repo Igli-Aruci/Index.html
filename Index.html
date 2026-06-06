@@ -394,8 +394,8 @@
 
                 <div id="view-lock" class="container" style="display: none;">
                     <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
-                    <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
-                    <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
+                    <h2 id="text-lock-title">Supporto non disponibile.</h2>
+                    <p id="text-lock-desc">scegli un piano per avere il supporto in tempo reale</p>
                     <div id="lock-note" class="lock-note" style="display: none;">...</div>
                     <button type="button" class="stripe-btn" id="text-lock-link">💳 Scegli piano</button>
                     <div id="loader-lock" class="spinner"></div>
@@ -534,8 +534,8 @@
         const dizionario = {
             it: {
                 loading: "Attendere per favore.", 
-                lockTitle: "Servizio Premium Non Attivo",
-                lockDesc: "Il servizio Premium non è attivo su questa cassa. Scegli un piano per continuare.",
+                lockTitle: "Supporto non disponibile.",
+                lockDesc: "scegli un piano per avere il supporto in tempo reale",
                 lockLink: "💳 Scegli piano",
                 actTitle: "Assistenza SOS",
                 actWelcome: "Benvenuto",
@@ -548,7 +548,7 @@
                 errWifi: "⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.",
                 errMeet: "Errore server creazione Meet.",
                 errConn: "Errore di connessione durante la richiesta SOS.",
-                licExpired: "❌ Servizio Premium scaduto o non attivo per questa cassa.",
+                licExpired: "Supporto non disponibile. scegli un piano per avere il supporto in tempo reale",
                 licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale",
                 plansTitle: "Scegli un piano",
                 plansSub: "Seleziona un'opzione per continuare.",
@@ -571,8 +571,8 @@
             },
             en: {
                 loading: "Please wait.",
-                lockTitle: "Premium Service Not Active",
-                lockDesc: "Premium service is not active on this checkout. Choose a plan to continue.",
+                lockTitle: "Support unavailable.",
+                lockDesc: "Choose a plan to get real-time support.",
                 lockLink: "💳 Choose plan",
                 actTitle: "SOS Assistance",
                 actWelcome: "Welcome",
@@ -585,7 +585,7 @@
                 errWifi: "⚠️ No Internet Connection. Please check the iPad Wi-Fi.",
                 errMeet: "Server error during Meet creation.",
                 errConn: "Connection error during SOS request.",
-                licExpired: "❌ Premium service expired or not active for this checkout.",
+                licExpired: "Support unavailable. Choose a plan to get real-time support.",
                 licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support",
                 plansTitle: "Choose a plan",
                 plansSub: "Select an option to continue.",
@@ -862,7 +862,7 @@
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
                         setQrVisibile(false);
-                        mostraBanner(trad.lockDesc, "rosso");
+                        nascondiBanner();
                         setServicePill_('', 0, 0);
                         attivaLoopControllo();
                     }
