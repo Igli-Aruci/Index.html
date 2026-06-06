@@ -296,36 +296,7 @@
         .testo-scansione { font-size: 12px; color: rgba(15, 23, 42, 0.85); font-weight: 1000; margin-bottom: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
         #qr-image { width: min(190px, 52vw); aspect-ratio: 1 / 1; height: auto; border-radius: 16px; border: 4px solid #10b981; padding: 6px; background: #fff; }
 
-        .wifi-alert-banner {
-            position: fixed;
-            top: calc(10px + env(safe-area-inset-top));
-            left: 50%;
-            transform: translateX(-50%) translateY(-120%);
-            width: min(960px, calc(100% - 24px));
-            text-align: left;
-            padding: 14px 14px;
-            font-size: 14px;
-            font-weight: 950;
-            color: #fff;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.30);
-            transition: transform 0.35s cubic-bezier(0.2, 1, 0.2, 1);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 10px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        .wifi-alert-banner.mostra { transform: translateX(-50%) translateY(0); }
-        .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
-        .banner-icon { width: 36px; height: 36px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.16); flex: 0 0 auto; }
-        #error-banner-message { flex: 1 1 auto; line-height: 1.2; }
-        .banner-close { flex: 0 0 auto; border: 0; background: transparent; color: rgba(255,255,255,0.92); width: 36px; height: 36px; border-radius: 12px; font-size: 22px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-        .banner-close:active { transform: scale(0.98); }
-        .banner-rosso { background: linear-gradient(135deg, rgba(239, 68, 68, 0.98), rgba(220, 38, 38, 0.98)); border: 1px solid rgba(255, 255, 255, 0.18); }
-        .banner-arancione { background: linear-gradient(135deg, rgba(249, 115, 22, 0.98), rgba(234, 88, 12, 0.98)); border: 1px solid rgba(255, 255, 255, 0.18); }
+        .lock-banner { cursor: default; user-select: none; margin-bottom: 12px; }
 
         #container-widget-3cx { width: 100%; height: 100%; min-height: 0; border-radius: var(--radius); overflow: hidden; background: transparent; border: 0; box-shadow: none; }
         #container-widget-3cx call-us-selector { display: block !important; width: 100%; height: 100%; min-height: 100%; }
@@ -342,14 +313,6 @@
     </style>
 </head>
 <body>
-
-    <div id="error-banner" class="wifi-alert-banner banner-rosso">
-        <span class="banner-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        </span>
-        <span id="error-banner-message">...</span>
-        <button id="error-banner-close" class="banner-close" type="button" aria-label="Chiudi">×</button>
-    </div>
 
     <div class="shell">
         <div class="shell-header">
@@ -374,6 +337,7 @@
                     <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
                     <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
                     <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
+                    <div id="lock-banner" class="stripe-btn lock-banner" style="display: none;">...</div>
                     <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_self" rel="noopener noreferrer" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
                     <div id="loader-lock" class="spinner"></div>
                     <div id="status-text"></div>
@@ -525,13 +489,18 @@
         let contoRovesciaTimer = null;
 
         function mostraBanner(testo, tipo) {
-            const banner = document.getElementById('error-banner');
-            banner.className = "wifi-alert-banner " + (tipo === 'rosso' ? 'banner-rosso' : 'banner-arancione');
-            document.getElementById('error-banner-message').innerText = testo;
-            banner.classList.add('mostra');
+            const lockBanner = document.getElementById('lock-banner');
+            if (!lockBanner) return;
+            lockBanner.innerText = String(testo || '');
+            lockBanner.style.display = 'block';
         }
 
-        function nascondiBanner() { document.getElementById('error-banner').classList.remove('mostra'); }
+        function nascondiBanner() {
+            const lockBanner = document.getElementById('lock-banner');
+            if (!lockBanner) return;
+            lockBanner.style.display = 'none';
+            lockBanner.innerText = '';
+        }
 
         function emailValidaPerSos_() {
             const input = document.getElementById('input-email');
@@ -561,7 +530,14 @@
             btn.disabled = !emailValidaPerSos_();
         }
 
-        window.addEventListener('offline', function() { mostraBanner(trad.errWifi, "rosso"); });
+        window.addEventListener('offline', function() {
+            document.body.classList.remove('licenza-attiva');
+            document.getElementById('view-loading').style.display = 'none';
+            document.getElementById('view-active').style.display = 'none';
+            document.getElementById('view-lock').style.display = 'block';
+            setQrVisibile(false);
+            mostraBanner(trad.errWifi, "rosso");
+        });
         window.addEventListener('online', function() { nascondiBanner(); verificaLicenza(false); });
 
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
@@ -737,11 +713,7 @@
             } catch (e3) {}
         }
 
-        (function() {
-            const closeBtn = document.getElementById('error-banner-close');
-            if (!closeBtn) return;
-            closeBtn.addEventListener('click', function() { nascondiBanner(); });
-        })();
+        (function() {})();
 
         function avviaContoRovescia(tempoScadenza) {
             if (contoRovesciaTimer) clearInterval(contoRovesciaTimer);
