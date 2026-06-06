@@ -302,8 +302,8 @@
             left: 50%;
             transform: translateX(-50%) translateY(-120%);
             width: min(960px, calc(100% - 24px));
-            text-align: center;
-            padding: 14px 18px;
+            text-align: left;
+            padding: 14px 14px;
             font-size: 14px;
             font-weight: 950;
             color: #fff;
@@ -313,13 +313,17 @@
             z-index: 99999;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 10px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
         .wifi-alert-banner.mostra { transform: translateX(-50%) translateY(0); }
         .wifi-alert-banner svg { width: 20px; height: 20px; fill: currentColor; }
+        .banner-icon { width: 36px; height: 36px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.16); flex: 0 0 auto; }
+        #error-banner-message { flex: 1 1 auto; line-height: 1.2; }
+        .banner-close { flex: 0 0 auto; border: 0; background: transparent; color: rgba(255,255,255,0.92); width: 36px; height: 36px; border-radius: 12px; font-size: 22px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .banner-close:active { transform: scale(0.98); }
         .banner-rosso { background: linear-gradient(135deg, rgba(239, 68, 68, 0.98), rgba(220, 38, 38, 0.98)); border: 1px solid rgba(255, 255, 255, 0.18); }
         .banner-arancione { background: linear-gradient(135deg, rgba(249, 115, 22, 0.98), rgba(234, 88, 12, 0.98)); border: 1px solid rgba(255, 255, 255, 0.18); }
 
@@ -340,8 +344,11 @@
 <body>
 
     <div id="error-banner" class="wifi-alert-banner banner-rosso">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <span class="banner-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 12-4.48 12-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </span>
         <span id="error-banner-message">...</span>
+        <button id="error-banner-close" class="banner-close" type="button" aria-label="Chiudi">×</button>
     </div>
 
     <div class="shell">
@@ -367,8 +374,7 @@
                     <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
                     <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
                     <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
-                    <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_blank" rel="noopener noreferrer" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
-                    <button id="btn-check" onclick="verificaLicenza(true)" class="verify-btn">🔄 Ho già pagato, verifica</button>
+                    <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_self" rel="noopener noreferrer" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
                     <div id="loader-lock" class="spinner"></div>
                     <div id="status-text"></div>
                 </div>
@@ -474,7 +480,7 @@
                 errWifi: "⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.",
                 errMeet: "Errore server creazione Meet.",
                 errConn: "Errore di connessione durante la richiesta SOS.",
-                licExpired: "❌ Servizio Premium Scaduto o Non Attivo per questa cassa.",
+                licExpired: "❌ Servizio Premium scaduto o non attivo per questa cassa.",
                 licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale"
             },
             en: {
@@ -494,7 +500,7 @@
                 errWifi: "⚠️ No Internet Connection. Please check the iPad Wi-Fi.",
                 errMeet: "Server error during Meet creation.",
                 errConn: "Connection error during SOS request.",
-                licExpired: "❌ Premium Service Expired or Not Active for this checkout.",
+                licExpired: "❌ Premium service expired or not active for this checkout.",
                 licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support"
             }
         };
@@ -505,7 +511,6 @@
         document.getElementById('text-lock-title').innerText = trad.lockTitle;
         document.getElementById('text-lock-desc').innerText = trad.lockDesc;
         document.getElementById('text-lock-link').innerText = trad.lockLink;
-        document.getElementById('btn-check').innerText = trad.lockVerify;
         document.getElementById('text-act-title').innerText = trad.actTitle;
         document.getElementById('text-act-welcome').innerText = trad.actWelcome;
         document.getElementById('text-act-desc').innerText = trad.actDesc;
@@ -582,8 +587,8 @@
             if (!navigator.onLine || !businessId || staVerificando) return;
             staVerificando = true;
             if (mostraLoaderPulsante) {
-                document.getElementById('btn-check').disabled = true;
-                document.getElementById('loader-lock').style.display = 'block';
+                const loader = document.getElementById('loader-lock');
+                if (loader) loader.style.display = 'block';
             }
             eseguiChiamataGoogle(
                 { id: businessId, loc: locationId, action: 'check' },
@@ -591,8 +596,8 @@
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
                     if (mostraLoaderPulsante) {
-                        document.getElementById('btn-check').disabled = false;
-                        document.getElementById('loader-lock').style.display = 'none';
+                        const loader = document.getElementById('loader-lock');
+                        if (loader) loader.style.display = 'none';
                     }
                     if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
                         clearInterval(controlloAutomaticoTimer); controlloAutomaticoTimer = null;
@@ -622,7 +627,10 @@
                 function() {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
-                    if (mostraLoaderPulsante) { document.getElementById('btn-check').disabled = false; document.getElementById('loader-lock').style.display = 'none'; }
+                    if (mostraLoaderPulsante) {
+                        const loader = document.getElementById('loader-lock');
+                        if (loader) loader.style.display = 'none';
+                    }
                     attivaLoopControllo();
                 }
             );
@@ -730,12 +738,9 @@
         }
 
         (function() {
-            const btn = document.getElementById('text-lock-link');
-            if (!btn) return;
-            btn.addEventListener('click', function(ev) {
-                ev.preventDefault();
-                apriLinkEsterno(btn.href);
-            });
+            const closeBtn = document.getElementById('error-banner-close');
+            if (!closeBtn) return;
+            closeBtn.addEventListener('click', function() { nascondiBanner(); });
         })();
 
         function avviaContoRovescia(tempoScadenza) {
