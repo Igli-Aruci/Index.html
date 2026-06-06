@@ -314,7 +314,27 @@
         .testo-scansione { font-size: 11px; color: rgba(15, 23, 42, 0.82); font-weight: 1000; margin: 0; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.25; }
         #qr-image { width: clamp(110px, 12vw, 150px); aspect-ratio: 1 / 1; height: auto; border-radius: 14px; border: 3px solid #10b981; padding: 5px; background: #fff; }
 
-        .lock-banner { cursor: default; user-select: none; margin-bottom: 12px; }
+        .lock-note { margin: 10px 0 12px; padding: 12px 12px; border-radius: 16px; background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.10); text-align: left; font-size: 13px; color: rgba(15, 23, 42, 0.72); font-weight: 850; }
+
+        .modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 999999; }
+        .modal-card { width: min(720px, 100%); background: rgba(255,255,255,0.95); border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 22px; box-shadow: 0 40px 120px rgba(0,0,0,0.45); padding: 18px; text-align: left; }
+        .modal-title { font-size: 18px; font-weight: 1000; color: rgba(15, 23, 42, 0.92); margin: 0 0 6px; }
+        .modal-sub { font-size: 13px; color: rgba(15, 23, 42, 0.68); font-weight: 850; margin: 0 0 14px; }
+        .plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        @media (max-width: 520px) { .plan-grid { grid-template-columns: 1fr; } }
+        .plan-btn { width: 100%; border: 0; border-radius: 18px; padding: 14px 14px; font-weight: 1000; font-size: 14px; letter-spacing: 0.02em; cursor: pointer; color: #fff; background: linear-gradient(135deg, #635bff, #7c3aed); box-shadow: 0 14px 35px rgba(99, 91, 255, 0.22); }
+        .plan-btn.secondary { background: rgba(15, 23, 42, 0.06); color: rgba(15, 23, 42, 0.82); box-shadow: none; border: 1px solid rgba(15, 23, 42, 0.12); }
+        .plan-btn.payg { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 16px 40px rgba(239, 68, 68, 0.22); }
+        .plan-sep { height: 1px; background: rgba(15, 23, 42, 0.10); margin: 14px 0; }
+        .payg-box { margin-top: 10px; padding: 12px 12px; border-radius: 16px; background: rgba(239, 68, 68, 0.07); border: 1px solid rgba(239, 68, 68, 0.18); color: rgba(15, 23, 42, 0.78); font-weight: 900; font-size: 13px; }
+        .modal-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+        .modal-close { border: 0; background: transparent; color: rgba(15, 23, 42, 0.70); font-weight: 1000; font-size: 14px; cursor: pointer; padding: 10px 10px; border-radius: 12px; }
+        .modal-close:active { transform: scale(0.99); }
+
+        .service-pill { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 1000; margin-left: 10px; border: 1px solid rgba(15, 23, 42, 0.10); background: rgba(15, 23, 42, 0.04); color: rgba(15, 23, 42, 0.72); }
+        .service-pill.premium { background: rgba(16, 185, 129, 0.14); color: #065f46; border-color: rgba(16, 185, 129, 0.22); }
+        .service-pill.hours { background: rgba(99, 91, 255, 0.14); color: rgba(67, 56, 202, 0.95); border-color: rgba(99, 91, 255, 0.22); }
+        .service-pill.payg { background: rgba(239, 68, 68, 0.12); color: #b91c1c; border-color: rgba(239, 68, 68, 0.22); }
 
         .qr-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
         .qr-info { padding: 10px 10px; border-radius: 16px; background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.10); text-align: left; }
@@ -376,15 +396,15 @@
                     <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="Logo" class="brand-logo">
                     <h2 id="text-lock-title">Servizio Premium Non Attivo</h2>
                     <p id="text-lock-desc">Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.</p>
-                    <div id="lock-banner" class="stripe-btn lock-banner" style="display: none;">...</div>
-                    <a href="https://buy.stripe.com/tuo_link_di_pagamento" target="_self" rel="noopener noreferrer" class="stripe-btn" id="text-lock-link">💳 Sblocca Servizio</a>
+                    <div id="lock-note" class="lock-note" style="display: none;">...</div>
+                    <button type="button" class="stripe-btn" id="text-lock-link">💳 Scegli piano</button>
                     <div id="loader-lock" class="spinner"></div>
                     <div id="status-text"></div>
                 </div>
 
                 <div id="view-active" class="container" style="display: none;">
                     <h2 id="text-act-title">Assistenza SOS</h2>
-                    <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span></div>
+                    <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span><span id="display-service" class="service-pill" style="display:none;"></span></div>
                     <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat qui a destra.</p>
                     <div id="ticket-bar" class="ticket-bar">
                         <div class="ticket-row">
@@ -429,6 +449,30 @@
 
             <div class="chat-panel">
                 <div id="container-widget-3cx"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="plans-modal" class="modal" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div id="plans-title" class="modal-title">Scegli un piano</div>
+            <div id="plans-sub" class="modal-sub">Seleziona un'opzione per continuare.</div>
+            <div class="plan-grid">
+                <button type="button" class="plan-btn" data-plan="H10">10 ore • 100€</button>
+                <button type="button" class="plan-btn" data-plan="H20">20 ore • 200€</button>
+                <button type="button" class="plan-btn" data-plan="H30">30 ore • 300€</button>
+                <button type="button" class="plan-btn" data-plan="PREMIUM">Premium • 350€/anno</button>
+            </div>
+            <div class="plan-sep"></div>
+            <button type="button" id="plan-payg" class="plan-btn payg">Chiamata a pagamento • 40€ / 30 min</button>
+            <div id="payg-box" class="payg-box" style="display:none;">
+                <div id="payg-text">Questa chiamata verrà fatturata a 40€ ogni 30 minuti.</div>
+                <div style="margin-top:10px;">
+                    <button type="button" id="payg-confirm" class="plan-btn payg">Conferma e continua</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="plans-close" class="modal-close">Chiudi</button>
             </div>
         </div>
     </div>
@@ -489,9 +533,8 @@
             it: {
                 loading: "Attendere per favore.", 
                 lockTitle: "Servizio Premium Non Attivo",
-                lockDesc: "Per utilizzare la funzione di Blocco Servizio SOS e ricevere videoassistenza immediata in cassa, attiva il piano Premium.",
-                lockLink: "💳 Sblocca Servizio",
-                lockVerify: "🔄 Ho già pagato, verifica",
+                lockDesc: "Il servizio Premium non è attivo su questa cassa. Scegli un piano per continuare.",
+                lockLink: "💳 Scegli piano",
                 actTitle: "Assistenza SOS",
                 actWelcome: "Benvenuto",
                 actDesc: "Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat in basso a destra.",
@@ -505,6 +548,12 @@
                 errConn: "Errore di connessione durante la richiesta SOS.",
                 licExpired: "❌ Servizio Premium scaduto o non attivo per questa cassa.",
                 licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale",
+                plansTitle: "Scegli un piano",
+                plansSub: "Seleziona un'opzione per continuare.",
+                paygBtn: "Chiamata a pagamento • 40€ / 30 min",
+                paygText: "Questa chiamata verrà fatturata a 40€ ogni 30 minuti.",
+                paygConfirm: "Conferma e continua",
+                plansClose: "Chiudi",
                 ticketLabel: "Stato Ticket",
                 ticketQueueLabel: "Posizione",
                 ticketEtaLabel: "Tempo stimato",
@@ -521,9 +570,8 @@
             en: {
                 loading: "Please wait.",
                 lockTitle: "Premium Service Not Active",
-                lockDesc: "To use the SOS Service Block feature and receive immediate video assistance at checkout, please activate the Premium plan.",
-                lockLink: "💳 Unlock Service",
-                lockVerify: "🔄 Already paid, verify",
+                lockDesc: "Premium service is not active on this checkout. Choose a plan to continue.",
+                lockLink: "💳 Choose plan",
                 actTitle: "SOS Assistance",
                 actWelcome: "Welcome",
                 actDesc: "We are at your disposal. Click to start an immediate video call or use the chat in the bottom right corner.",
@@ -537,6 +585,12 @@
                 errConn: "Connection error during SOS request.",
                 licExpired: "❌ Premium service expired or not active for this checkout.",
                 licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support",
+                plansTitle: "Choose a plan",
+                plansSub: "Select an option to continue.",
+                paygBtn: "Pay-per-call • €40 / 30 min",
+                paygText: "This call will be billed at €40 every 30 minutes.",
+                paygConfirm: "Confirm and continue",
+                plansClose: "Close",
                 ticketLabel: "Ticket Status",
                 ticketQueueLabel: "Queue",
                 ticketEtaLabel: "Estimated time",
@@ -558,6 +612,12 @@
         document.getElementById('text-lock-title').innerText = trad.lockTitle;
         document.getElementById('text-lock-desc').innerText = trad.lockDesc;
         document.getElementById('text-lock-link').innerText = trad.lockLink;
+        document.getElementById('plans-title').innerText = trad.plansTitle;
+        document.getElementById('plans-sub').innerText = trad.plansSub;
+        document.getElementById('plan-payg').innerText = trad.paygBtn;
+        document.getElementById('payg-text').innerText = trad.paygText;
+        document.getElementById('payg-confirm').innerText = trad.paygConfirm;
+        document.getElementById('plans-close').innerText = trad.plansClose;
         document.getElementById('text-act-title').innerText = trad.actTitle;
         document.getElementById('text-act-welcome').innerText = trad.actWelcome;
         document.getElementById('text-act-desc').innerText = trad.actDesc;
@@ -576,18 +636,113 @@
         let contoRovesciaTimer = null;
 
         function mostraBanner(testo, tipo) {
-            const lockBanner = document.getElementById('lock-banner');
-            if (!lockBanner) return;
-            lockBanner.innerText = String(testo || '');
-            lockBanner.style.display = 'block';
+            const lockNote = document.getElementById('lock-note');
+            if (!lockNote) return;
+            lockNote.innerText = String(testo || '');
+            lockNote.style.display = 'block';
         }
 
         function nascondiBanner() {
-            const lockBanner = document.getElementById('lock-banner');
-            if (!lockBanner) return;
-            lockBanner.style.display = 'none';
-            lockBanner.innerText = '';
+            const lockNote = document.getElementById('lock-note');
+            if (!lockNote) return;
+            lockNote.style.display = 'none';
+            lockNote.innerText = '';
         }
+
+        const stripeLinks = {
+            H10: "https://buy.stripe.com/tuo_link_10_ore_100",
+            H20: "https://buy.stripe.com/tuo_link_20_ore_200",
+            H30: "https://buy.stripe.com/tuo_link_30_ore_300",
+            PREMIUM: "https://buy.stripe.com/tuo_link_premium_350"
+        };
+
+        function setServicePill_(serviceType, hoursRemaining, rate) {
+            const pill = document.getElementById('display-service');
+            if (!pill) return;
+
+            const type = String(serviceType || '').toUpperCase();
+            pill.className = 'service-pill';
+
+            if (type === 'PREMIUM') {
+                pill.classList.add('premium');
+                pill.innerText = 'Premium';
+                pill.style.display = 'inline-flex';
+                return;
+            }
+            if (type === 'HOURS') {
+                pill.classList.add('hours');
+                const h = Number(hoursRemaining);
+                const txt = isFinite(h) ? (Math.round(h * 2) / 2).toString().replace('.', ',') : '0';
+                pill.innerText = `Servizio ore: ${txt}h`;
+                pill.style.display = 'inline-flex';
+                return;
+            }
+            if (type === 'PAYG') {
+                pill.classList.add('payg');
+                const r = Number(rate);
+                const rr = isFinite(r) ? Math.floor(r) : 40;
+                pill.innerText = `Chiamata a pagamento: ${rr}€ / 30min`;
+                pill.style.display = 'inline-flex';
+                return;
+            }
+
+            pill.style.display = 'none';
+            pill.innerText = '';
+        }
+
+        function apriPiani_(open) {
+            const modal = document.getElementById('plans-modal');
+            if (!modal) return;
+            modal.style.display = open ? 'flex' : 'none';
+            if (!open) {
+                const paygBox = document.getElementById('payg-box');
+                if (paygBox) paygBox.style.display = 'none';
+            }
+        }
+
+        (function() {
+            const openBtn = document.getElementById('text-lock-link');
+            const closeBtn = document.getElementById('plans-close');
+            const modal = document.getElementById('plans-modal');
+            const paygBtn = document.getElementById('plan-payg');
+            const paygBox = document.getElementById('payg-box');
+            const paygConfirm = document.getElementById('payg-confirm');
+            const planButtons = document.querySelectorAll('[data-plan]');
+
+            if (openBtn) openBtn.addEventListener('click', function() { apriPiani_(true); });
+            if (closeBtn) closeBtn.addEventListener('click', function() { apriPiani_(false); });
+            if (modal) modal.addEventListener('click', function(ev) { if (ev.target === modal) apriPiani_(false); });
+
+            planButtons.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const plan = btn.getAttribute('data-plan') || '';
+                    const url = stripeLinks[plan];
+                    if (url) apriLinkEsterno(url);
+                });
+            });
+
+            if (paygBtn) {
+                paygBtn.addEventListener('click', function() {
+                    if (paygBox) paygBox.style.display = (paygBox.style.display === 'none' || !paygBox.style.display) ? 'block' : 'none';
+                });
+            }
+
+            if (paygConfirm) {
+                paygConfirm.addEventListener('click', function() {
+                    eseguiChiamataGoogle(
+                        { id: businessId, loc: locationId, action: 'start_payg' },
+                        function(res) {
+                            const token = res && res.paygToken ? String(res.paygToken) : '';
+                            if (!token) return;
+                            localStorage.setItem('payg_token_' + businessId, token);
+                            apriPiani_(false);
+                            verificaLicenza(false);
+                        },
+                        function() {}
+                    );
+                });
+            }
+        })();
 
         function emailValidaPerSos_() {
             const input = document.getElementById('input-email');
@@ -654,8 +809,9 @@
                 const loader = document.getElementById('loader-lock');
                 if (loader) loader.style.display = 'block';
             }
+            const paygToken = localStorage.getItem('payg_token_' + businessId) || '';
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'check' },
+                { id: businessId, loc: locationId, action: 'check', paygToken: paygToken },
                 function(data) {
                     document.getElementById('view-loading').style.display = 'none';
                     staVerificando = false;
@@ -663,7 +819,7 @@
                         const loader = document.getElementById('loader-lock');
                         if (loader) loader.style.display = 'none';
                     }
-                    if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO')) {
+                    if (data.status === 'ATTIVO' || data.status.startsWith('AVVISO') || data.status === 'ORE' || data.status === 'PAYG') {
                         clearInterval(controlloAutomaticoTimer); controlloAutomaticoTimer = null;
                         document.body.classList.add('licenza-attiva');
                         document.getElementById('view-lock').style.display = 'none';
@@ -675,16 +831,34 @@
                         if (contoRovesciaTimer) { clearInterval(contoRovesciaTimer); contoRovesciaTimer = null; }
                         ripristinaTicketSePresente();
                         aggiornaStatoPulsanteSos_();
+                        setServicePill_(data.serviceType, data.hoursRemaining, data.rate);
+                        localStorage.setItem('service_type_' + businessId, String(data.serviceType || ''));
+                        localStorage.setItem('hours_remaining_' + businessId, String(data.hoursRemaining || '0'));
+                        localStorage.setItem('service_rate_' + businessId, String(data.rate || '0'));
 
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
                             mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
                         } else { nascondiBanner(); }
                     } else {
                         document.body.classList.remove('licenza-attiva');
+                        const activeToken = localStorage.getItem('sos_ticket_' + businessId);
+                        if (activeToken) {
+                            document.body.classList.add('licenza-attiva');
+                            document.getElementById('view-lock').style.display = 'none';
+                            document.getElementById('view-active').style.display = 'block';
+                            ripristinaTicketSePresente();
+                            const st = localStorage.getItem('service_type_' + businessId) || '';
+                            const hr = localStorage.getItem('hours_remaining_' + businessId) || '0';
+                            const rr = localStorage.getItem('service_rate_' + businessId) || '0';
+                            setServicePill_(st, Number(hr), Number(rr));
+                            nascondiBanner();
+                            return;
+                        }
                         document.getElementById('view-active').style.display = 'none';
                         document.getElementById('view-lock').style.display = 'block';
                         setQrVisibile(false);
-                        mostraBanner(trad.licExpired, "rosso");
+                        mostraBanner(trad.lockDesc, "rosso");
+                        setServicePill_('', 0, 0);
                         attivaLoopControllo();
                     }
                 },
@@ -711,8 +885,9 @@
             document.getElementById('loader-sos').style.display = 'block';
             
             const emailCliente = String(document.getElementById('input-email').value || '').trim();
+            const paygToken = localStorage.getItem('payg_token_' + businessId) || '';
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello, email: emailCliente },
+                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello, email: emailCliente, paygToken: paygToken },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
@@ -902,12 +1077,14 @@
                             pollingTicketTimer = null;
                             localStorage.removeItem('sos_ticket_' + businessId);
                             localStorage.removeItem('sos_url_' + businessId);
+                            localStorage.removeItem('payg_token_' + businessId);
                             document.body.classList.remove('sos-focus');
                             document.getElementById('btn-sos').innerText = trad.actSos;
                             document.getElementById('qr-result').style.display = 'none';
                             aggiornaTicketBar('', '', '');
                             setQrVisibile(false);
                             aggiornaStatoPulsanteSos_();
+                            verificaLicenza(false);
                             return;
                         }
                         if (res.status === 'CLOSED') {
@@ -918,11 +1095,13 @@
                             setTimeout(function() {
                                 localStorage.removeItem('sos_ticket_' + businessId);
                                 localStorage.removeItem('sos_url_' + businessId);
+                                localStorage.removeItem('payg_token_' + businessId);
                                 document.body.classList.remove('sos-focus');
                                 document.getElementById('btn-sos').innerText = trad.actSos;
                                 document.getElementById('qr-result').style.display = 'none';
                                 aggiornaTicketBar('', '', '');
                                 aggiornaStatoPulsanteSos_();
+                                verificaLicenza(false);
                             }, 3500);
                             return;
                         }
