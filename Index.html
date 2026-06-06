@@ -135,7 +135,7 @@
         .shell-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
         .shell-brand img { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.28)); }
         .shell-title { font-size: clamp(13px, 1.4vw, 14px); font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .shell-subtitle { font-size: 12px; color: rgba(255,255,255,0.72); margin-top: 2px; }
+        .shell-subtitle { font-size: 12px; color: rgba(255,255,255,0.72); margin-top: 2px; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
         .shell-main {
             width: 100%;
@@ -379,7 +379,7 @@
                 <img src="https://i.ibb.co/gFtkXBT7/NO-RIVAL-ESTESO-CON-PAY-OFF-BLUE.png" alt="NO RIVAL">
                 <div>
                     <div class="shell-title">NO RIVAL POS SUPPORTO</div>
-                    <div class="shell-subtitle" id="shell-subtitle">Supporto in tempo reale</div>
+                    <div class="shell-subtitle" id="shell-subtitle">Supporto in tempo reale <span id="header-service" class="service-pill" style="display:none;"></span></div>
                 </div>
             </div>
         </div>
@@ -404,7 +404,7 @@
 
                 <div id="view-active" class="container" style="display: none;">
                     <h2 id="text-act-title">Assistenza SOS</h2>
-                    <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span><span id="display-service" class="service-pill" style="display:none;"></span></div>
+                    <div class="benvenuto"><span id="text-act-welcome">Benvenuto</span> <span id="display-user">Utente</span></div>
                     <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat qui a destra.</p>
                     <div id="ticket-bar" class="ticket-bar">
                         <div class="ticket-row">
@@ -657,7 +657,7 @@
         };
 
         function setServicePill_(serviceType, hoursRemaining, rate) {
-            const pill = document.getElementById('display-service');
+            const pill = document.getElementById('header-service');
             if (!pill) return;
 
             const type = String(serviceType || '').toUpperCase();
