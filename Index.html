@@ -717,7 +717,9 @@
                 btn.addEventListener('click', function() {
                     const plan = btn.getAttribute('data-plan') || '';
                     const url = stripeLinks[plan];
-                    if (url) apriLinkEsterno(url);
+                    if (url) {
+                        try { window.location.assign(url); } catch (e) {}
+                    }
                 });
             });
 
@@ -966,7 +968,6 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-                return;
             } catch (e) {}
             try {
                 const w = window.open(finalUrl, '_blank');
