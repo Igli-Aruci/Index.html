@@ -197,7 +197,11 @@
         .benvenuto { font-size: clamp(16px, 1.7vw, 20px); font-weight: 900; margin-bottom: 12px; color: #2563eb; }
         p { margin: 0 0 16px 0; font-size: clamp(13px, 1.4vw, 15px); line-height: 1.45; color: rgba(15, 23, 42, 0.65); }
 
-        .ticket-bar { display: none; margin: 12px 0 14px; padding: 12px; border-radius: 16px; border: 1px solid rgba(15, 23, 42, 0.10); background: rgba(15, 23, 42, 0.035); text-align: left; }
+        .ticket-bar { display: none; margin: 12px 0 14px; padding: 14px 14px 12px 18px; border-radius: 18px; border: 1px solid rgba(15, 23, 42, 0.10); background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(15, 23, 42, 0.03)); text-align: left; box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06); position: relative; overflow: hidden; }
+        .ticket-bar::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: #ef4444; }
+        .ticket-bar.ticket-open::before { background: #ef4444; }
+        .ticket-bar.ticket-assigned::before { background: #f59e0b; }
+        .ticket-bar.ticket-closed::before { background: #10b981; }
         .ticket-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .ticket-label { font-size: 12px; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(15, 23, 42, 0.55); }
         .ticket-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 999px; font-weight: 950; font-size: 12px; border: 1px solid rgba(15, 23, 42, 0.10); }
@@ -208,7 +212,13 @@
         .ticket-pill.assigned .ticket-dot { background: #f59e0b; }
         .ticket-pill.closed { background: rgba(16, 185, 129, 0.14); color: #065f46; }
         .ticket-pill.closed .ticket-dot { background: #10b981; }
-        .ticket-sub { margin-top: 10px; font-size: 13px; color: rgba(15, 23, 42, 0.60); font-weight: 800; }
+        .ticket-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+        @media (max-width: 520px) { .ticket-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 380px) { .ticket-meta { grid-template-columns: 1fr; } }
+        .ticket-kpi { padding: 10px 10px; border-radius: 14px; background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.08); }
+        .ticket-kpi-label { font-size: 11px; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(15, 23, 42, 0.55); }
+        .ticket-kpi-value { margin-top: 6px; font-size: 16px; font-weight: 1000; color: rgba(15, 23, 42, 0.88); }
+        .ticket-sub { margin-top: 12px; font-size: 13px; color: rgba(15, 23, 42, 0.62); font-weight: 850; }
         .ticket-sub strong { color: rgba(15, 23, 42, 0.88); }
 
         .email-field { width: 100%; text-align: left; margin: 6px 0 10px; }
@@ -349,8 +359,22 @@
                     <p id="text-act-desc">Siamo a tua disposizione. Clicca per avviare la videochiamata immediata o usa la chat qui a destra.</p>
                     <div id="ticket-bar" class="ticket-bar">
                         <div class="ticket-row">
-                            <div class="ticket-label">Stato Ticket</div>
+                            <div id="ticket-label" class="ticket-label">Stato Ticket</div>
                             <div id="ticket-pill" class="ticket-pill wait"><span class="ticket-dot"></span><span id="ticket-pill-text">In attesa</span></div>
+                        </div>
+                        <div id="ticket-meta" class="ticket-meta">
+                            <div class="ticket-kpi">
+                                <div id="ticket-queue-label" class="ticket-kpi-label">Posizione</div>
+                                <div id="ticket-queue" class="ticket-kpi-value">—</div>
+                            </div>
+                            <div class="ticket-kpi">
+                                <div id="ticket-eta-label" class="ticket-kpi-label">Tempo stimato</div>
+                                <div id="ticket-eta" class="ticket-kpi-value">—</div>
+                            </div>
+                            <div class="ticket-kpi">
+                                <div id="ticket-elapsed-label" class="ticket-kpi-label">In attesa da</div>
+                                <div id="ticket-elapsed" class="ticket-kpi-value">—</div>
+                            </div>
                         </div>
                         <div id="ticket-sub" class="ticket-sub"></div>
                     </div>
@@ -445,7 +469,19 @@
                 errMeet: "Errore server creazione Meet.",
                 errConn: "Errore di connessione durante la richiesta SOS.",
                 licExpired: "❌ Servizio Premium scaduto o non attivo per questa cassa.",
-                licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale"
+                licWarning: "⚠️ Il servizio Premium scadrà tra {giorni} giorni. Rinnova per avere assistenza in tempo reale",
+                ticketLabel: "Stato Ticket",
+                ticketQueueLabel: "Posizione",
+                ticketEtaLabel: "Tempo stimato",
+                ticketElapsedLabel: "In attesa da",
+                ticketWait: "In attesa",
+                ticketAssigned: "Preso in carico",
+                ticketClosed: "Chiuso",
+                ticketMsgNext: "Sei il prossimo. Stiamo arrivando.",
+                ticketMsgQueue: "Sei in coda. Stiamo arrivando.",
+                ticketMsgAssigned: "Il tecnico è stato assegnato. Controlla la tua email per l'invito.",
+                ticketMsgClosed: "Intervento chiuso. Grazie.",
+                ticketEtaFmt: "~{min} min"
             },
             en: {
                 loading: "Please wait.",
@@ -465,7 +501,19 @@
                 errMeet: "Server error during Meet creation.",
                 errConn: "Connection error during SOS request.",
                 licExpired: "❌ Premium service expired or not active for this checkout.",
-                licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support"
+                licWarning: "⚠️ Premium service will expire in {giorni} days. Renew to maintain real-time support",
+                ticketLabel: "Ticket Status",
+                ticketQueueLabel: "Queue",
+                ticketEtaLabel: "Estimated time",
+                ticketElapsedLabel: "Waiting for",
+                ticketWait: "Waiting",
+                ticketAssigned: "Assigned",
+                ticketClosed: "Closed",
+                ticketMsgNext: "You're next. We are on our way.",
+                ticketMsgQueue: "You're in the queue. We are on our way.",
+                ticketMsgAssigned: "An operator has been assigned. Please check your email for the invite.",
+                ticketMsgClosed: "Ticket closed. Thank you.",
+                ticketEtaFmt: "~{min} min"
             }
         };
 
@@ -480,6 +528,10 @@
         document.getElementById('text-act-desc').innerText = trad.actDesc;
         document.getElementById('text-act-email-label').innerText = trad.actEmailLabel;
         document.getElementById('input-email').placeholder = trad.actEmailPlaceholder;
+        document.getElementById('ticket-label').innerText = trad.ticketLabel;
+        document.getElementById('ticket-queue-label').innerText = trad.ticketQueueLabel;
+        document.getElementById('ticket-eta-label').innerText = trad.ticketEtaLabel;
+        document.getElementById('ticket-elapsed-label').innerText = trad.ticketElapsedLabel;
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
         document.getElementById('display-user').innerText = userFormattato;
@@ -739,11 +791,25 @@
 
         let pollingTicketTimer = null;
 
-        function aggiornaTicketBar(stato, assignedTo, closedBy) {
+        function formatMinuti_(mins) {
+            const m = Number(mins);
+            if (!isFinite(m) || m < 0) return "—";
+            const total = Math.floor(m);
+            const h = Math.floor(total / 60);
+            const rem = total % 60;
+            if (h > 0) return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+            return `${total}m`;
+        }
+
+        function aggiornaTicketBar(stato, assignedTo, closedBy, queuePos, etaMinutes, elapsedMinutes) {
             const bar = document.getElementById('ticket-bar');
             const pill = document.getElementById('ticket-pill');
             const pillText = document.getElementById('ticket-pill-text');
             const sub = document.getElementById('ticket-sub');
+            const meta = document.getElementById('ticket-meta');
+            const queueEl = document.getElementById('ticket-queue');
+            const etaEl = document.getElementById('ticket-eta');
+            const elapsedEl = document.getElementById('ticket-elapsed');
 
             if (!stato) {
                 bar.style.display = 'none';
@@ -751,25 +817,39 @@
             }
             bar.style.display = 'block';
 
+            bar.className = 'ticket-bar';
             pill.className = 'ticket-pill';
             sub.innerText = '';
 
             if (stato === 'OPEN') {
+                bar.classList.add('ticket-open');
                 pill.classList.add('wait');
-                pillText.innerText = 'In attesa';
-                sub.innerHTML = 'Nessuno ha preso in carico la richiesta.';
+                pillText.innerText = trad.ticketWait;
+                const pos = Number(queuePos || 0);
+                const eta = Number(etaMinutes);
+                if (queueEl) queueEl.innerText = pos > 0 ? String(pos) : "—";
+                if (etaEl) etaEl.innerText = isFinite(eta) && eta >= 0 ? trad.ticketEtaFmt.replace("{min}", String(Math.max(0, Math.floor(eta)))) : "—";
+                if (elapsedEl) elapsedEl.innerText = formatMinuti_(elapsedMinutes);
+                if (meta) meta.style.display = 'grid';
+                sub.innerText = (pos > 1) ? trad.ticketMsgQueue : trad.ticketMsgNext;
                 return;
             }
             if (stato === 'ASSIGNED') {
+                bar.classList.add('ticket-assigned');
                 pill.classList.add('assigned');
-                pillText.innerText = 'Preso in carico';
-                if (assignedTo) sub.innerHTML = 'Tecnico: <strong>' + assignedTo + '</strong>';
+                pillText.innerText = trad.ticketAssigned;
+                if (meta) meta.style.display = 'none';
+                if (assignedTo) sub.innerHTML = 'Tecnico: <strong>' + assignedTo + '</strong> — ' + trad.ticketMsgAssigned;
+                else sub.innerText = trad.ticketMsgAssigned;
                 return;
             }
             if (stato === 'CLOSED') {
+                bar.classList.add('ticket-closed');
                 pill.classList.add('closed');
-                pillText.innerText = 'Chiuso';
-                if (closedBy) sub.innerHTML = 'Chiuso da: <strong>' + closedBy + '</strong>';
+                pillText.innerText = trad.ticketClosed;
+                if (meta) meta.style.display = 'none';
+                if (closedBy) sub.innerHTML = 'Chiuso da: <strong>' + closedBy + '</strong> — ' + trad.ticketMsgClosed;
+                else sub.innerText = trad.ticketMsgClosed;
                 return;
             }
         }
@@ -780,7 +860,7 @@
                 eseguiChiamataGoogle(
                     { action: 'ticket_status', token: token },
                     function(res) {
-                        if (!res || res.status === 'NON_TROVATO' || res.status === 'CLOSED') {
+                        if (!res || res.status === 'NON_TROVATO') {
                             clearInterval(pollingTicketTimer);
                             pollingTicketTimer = null;
                             localStorage.removeItem('sos_ticket_' + businessId);
@@ -792,9 +872,24 @@
                             aggiornaStatoPulsanteSos_();
                             return;
                         }
+                        if (res.status === 'CLOSED') {
+                            clearInterval(pollingTicketTimer);
+                            pollingTicketTimer = null;
+                            aggiornaTicketBar('CLOSED', '', res.closedBy || '', 0, 0, res.elapsedMinutes || 0);
+                            setQrVisibile(false);
+                            setTimeout(function() {
+                                localStorage.removeItem('sos_ticket_' + businessId);
+                                localStorage.removeItem('sos_url_' + businessId);
+                                document.getElementById('btn-sos').innerText = trad.actSos;
+                                document.getElementById('qr-result').style.display = 'none';
+                                aggiornaTicketBar('', '', '');
+                                aggiornaStatoPulsanteSos_();
+                            }, 3500);
+                            return;
+                        }
                         document.getElementById('btn-sos').disabled = true;
                         document.getElementById('btn-sos').innerText = trad.sosSent;
-                        aggiornaTicketBar(res.status, res.assignedTo || '', res.closedBy || '');
+                        aggiornaTicketBar(res.status, res.assignedTo || '', res.closedBy || '', res.queuePosition || 0, res.etaMinutes, res.elapsedMinutes || 0);
                         setQrVisibile(true);
                     },
                     function() {}
