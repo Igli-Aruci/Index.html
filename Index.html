@@ -835,7 +835,8 @@
                         aggiornaStatoPulsanteSos_();
                         setServicePill_(data.serviceType, data.hoursRemaining, data.rate);
                         localStorage.setItem('service_type_' + businessId, String(data.serviceType || ''));
-                        localStorage.setItem('hours_remaining_' + businessId, String(data.hoursRemaining || '0'));
+                        const hrsToStore = (String(data.serviceType || '').toUpperCase() === 'HOURS') ? (data.hoursRemaining || '0') : '0';
+                        localStorage.setItem('hours_remaining_' + businessId, String(hrsToStore));
                         localStorage.setItem('service_rate_' + businessId, String(data.rate || '0'));
 
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
