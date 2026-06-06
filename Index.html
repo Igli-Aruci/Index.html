@@ -392,9 +392,8 @@
                     <div id="loader-sos" class="spinner"></div>
 
                     <div id="qr-result">
-                        <div class="testo-scansione" id="text-act-scan">📱 Scansiona o clicca sotto per entrare</div>
+                        <div class="testo-scansione" id="text-act-scan">📱 Scansiona il QR code per partecipare alla videochiamata. In alternativa verifica la tua email per entrare in chiamata con l'operatore.</div>
                         <img id="qr-image" src="" alt="QR Code">
-                        <a id="direct-meet-link" href="#" target="_blank" rel="noopener noreferrer" class="direct-meet-btn">🟢 ENTRA IN VIDEOCHIAMATA</a>
                     </div>
                 </div>
             </div>
@@ -470,8 +469,7 @@
                 actEmailLabel: "Inserisci la tua Email",
                 actEmailPlaceholder: "email@esempio.it",
                 actSos: "🚨 Richiedi Videoassistenza",
-                actScan: "📱 Scansiona o clicca sotto per entrare",
-                actMeetBtn: "🟢 ENTRA IN VIDEOCHIAMATA",
+                actScan: "📱 Scansiona il QR code per partecipare alla videochiamata. In alternativa verifica la tua email per entrare in chiamata con l'operatore.",
                 sosSent: "🚨 SOS INVIATO",
                 errWifi: "⚠️ Connessione Internet Assente. Controlla il Wi-Fi dell'iPad.",
                 errMeet: "Errore server creazione Meet.",
@@ -491,8 +489,7 @@
                 actEmailLabel: "Enter your Email",
                 actEmailPlaceholder: "email@example.com",
                 actSos: "🚨 Request Video Assistance",
-                actScan: "📱 Scan or click below to join",
-                actMeetBtn: "🟢 JOIN VIDEO CALL",
+                actScan: "📱 Scan the QR code to join the video call. Alternatively, check your email to join the call with the operator.",
                 sosSent: "🚨 SOS SENT",
                 errWifi: "⚠️ No Internet Connection. Please check the iPad Wi-Fi.",
                 errMeet: "Server error during Meet creation.",
@@ -516,7 +513,6 @@
         document.getElementById('input-email').placeholder = trad.actEmailPlaceholder;
         document.getElementById('btn-sos').innerText = trad.actSos;
         document.getElementById('text-act-scan').innerText = trad.actScan;
-        document.getElementById('direct-meet-link').innerText = trad.actMeetBtn;
         document.getElementById('display-user').innerText = userFormattato;
 
         let controlloAutomaticoTimer = null;
@@ -688,7 +684,6 @@
             }
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(finalUrl)}`;
             document.getElementById('qr-image').src = qrUrl;
-            document.getElementById('direct-meet-link').href = finalUrl;
             document.getElementById('qr-result').style.display = 'block';
             setQrVisibile(true);
             
@@ -711,39 +706,6 @@
                 }
             } catch(e){}
         }
-
-        function apriMeet(url) {
-            const finalUrl = String(url || "").trim();
-            if (!finalUrl || finalUrl === '#') return;
-            try {
-                const a = document.createElement('a');
-                a.href = finalUrl;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                return;
-            } catch (e) {}
-            try {
-                const w = window.open(finalUrl, '_blank');
-                if (w) return;
-            } catch (e2) {}
-            try {
-                window.location.assign(finalUrl);
-            } catch (e3) {}
-        }
-
-        (function() {
-            const link = document.getElementById('direct-meet-link');
-            if (link) {
-                link.addEventListener('click', function(ev) {
-                    ev.preventDefault();
-                    const url = link.href;
-                    if (url && url !== '#') apriMeet(url);
-                });
-            }
-        })();
 
         function apriLinkEsterno(url) {
             const finalUrl = String(url || "").trim();
