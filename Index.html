@@ -95,8 +95,9 @@
             --radius: 22px;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; min-width: 0; }
         html, body { height: 100%; }
+        img { max-width: 100%; height: auto; }
 
         body {
             margin: 0;
@@ -168,7 +169,6 @@
         }
 
         body.licenza-attiva.qr-visibile .left-panel { justify-content: flex-start; }
-        body.licenza-attiva.qr-visibile .left-panel { justify-content: flex-start; }
 
         body.sos-focus .chat-panel { display: none !important; }
         body.sos-focus .shell-main { grid-template-columns: 1fr !important; }
@@ -190,6 +190,19 @@
             -webkit-backdrop-filter: blur(18px);
             overflow-wrap: anywhere;
         }
+
+        .ui-tile { border-radius: 16px; border: 1px solid rgba(15, 23, 42, 0.10); }
+        .ui-motion { transition: transform 180ms ease, opacity 180ms ease; will-change: transform, opacity; }
+        .ui-test-panel { position: fixed; right: 10px; bottom: 10px; width: min(420px, calc(100vw - 20px)); max-height: min(52vh, 520px); overflow: auto; background: rgba(255,255,255,0.92); border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; box-shadow: 0 20px 70px rgba(2, 6, 23, 0.25); padding: 12px; z-index: 1000000; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; color: rgba(15, 23, 42, 0.88); }
+        .ui-test-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 1000; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+        .ui-test-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 999px; font-weight: 950; font-size: 11px; border: 1px solid rgba(15, 23, 42, 0.12); background: rgba(15, 23, 42, 0.04); }
+        .ui-test-pill.ok { background: rgba(16, 185, 129, 0.14); color: #065f46; border-color: rgba(16, 185, 129, 0.22); }
+        .ui-test-pill.warn { background: rgba(239, 68, 68, 0.12); color: #b91c1c; border-color: rgba(239, 68, 68, 0.22); }
+        .ui-test-list { margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.35; }
+        .ui-test-list li { padding: 8px 8px; border-radius: 12px; border: 1px solid rgba(15, 23, 42, 0.10); background: rgba(255,255,255,0.70); }
+        .ui-test-list li + li { margin-top: 8px; }
+        .ui-test-close { border: 0; background: rgba(15, 23, 42, 0.06); color: rgba(15, 23, 42, 0.82); font-weight: 950; font-size: 12px; padding: 8px 10px; border-radius: 12px; cursor: pointer; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; } }
         @media (max-height: 520px) {
             .container { padding: 16px; }
             #view-loading { min-height: 340px; }
@@ -1143,6 +1156,130 @@
         }
 
         window.addEventListener('LinkIntercettato', function(e) { mostraQrCodeArea(e.detail); });
+
+        function avviaUiStabilityTest_() {
+            const panel = document.createElement('div');
+            panel.className = 'ui-test-panel ui-tile';
+            panel.id = 'ui-test-panel';
+            panel.innerHTML =
+                '<div class="ui-test-title">' +
+                    '<div>UI stability test</div>' +
+                    '<div style="display:flex; align-items:center; gap:8px;">' +
+                        '<span id="ui-test-status" class="ui-test-pill">—</span>' +
+                        '<button type="button" id="ui-test-close" class="ui-test-close">Chiudi</button>' +
+                    '</div>' +
+                '</div>' +
+                '<ul id="ui-test-list" class="ui-test-list"></ul>';
+            document.body.appendChild(panel);
+            const btnClose = document.getElementById('ui-test-close');
+            if (btnClose) btnClose.addEventListener('click', function() { panel.remove(); });
+
+            function isVisible_(el) {
+                if (!el) return false;
+                const cs = window.getComputedStyle(el);
+                if (!cs || cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
+                const r = el.getBoundingClientRect();
+                return r.width > 0 && r.height > 0;
+            }
+
+            function ratioClose_(a, b, tolerance = 0.06) {
+                if (!isFinite(a) || !isFinite(b) || a <= 0 || b <= 0) return false;
+                const diff = Math.abs(a - b) / Math.max(a, b);
+                return diff <= tolerance;
+            }
+
+            function checkImageRatio_(img, name, expectedRatio) {
+                if (!img || !isVisible_(img)) return null;
+                const r = img.getBoundingClientRect();
+                const displayed = r.width / Math.max(1, r.height);
+                if (expectedRatio) {
+                    const ok = ratioClose_(displayed, expectedRatio);
+                    return ok ? null : (name + ': rapporto deformato (' + displayed.toFixed(3) + ' vs ' + expectedRatio.toFixed(3) + ')');
+                }
+                if (img.naturalWidth && img.naturalHeight) {
+                    const natural = img.naturalWidth / img.naturalHeight;
+                    const ok = ratioClose_(displayed, natural);
+                    return ok ? null : (name + ': rapporto deformato (' + displayed.toFixed(3) + ' vs ' + natural.toFixed(3) + ')');
+                }
+                return null;
+            }
+
+            function checkOverflow_(el, name) {
+                if (!el || !isVisible_(el)) return null;
+                const overX = el.scrollWidth - el.clientWidth;
+                const overY = el.scrollHeight - el.clientHeight;
+                if (overX > 1 || overY > 1) {
+                    return name + ': overflow rilevato (x=' + Math.max(0, Math.round(overX)) + ', y=' + Math.max(0, Math.round(overY)) + ')';
+                }
+                return null;
+            }
+
+            function runOnce_() {
+                const issues = [];
+
+                const logoBig = document.querySelector('.brand-logo');
+                const logoSmall = document.querySelector('.shell-brand img');
+                const qrImg = document.getElementById('qr-image');
+                const modal = document.getElementById('plans-modal');
+                const modalCard = document.querySelector('.modal-card');
+                const ticketBar = document.getElementById('ticket-bar');
+                const ticketMeta = document.getElementById('ticket-meta');
+                const viewActive = document.getElementById('view-active');
+                const viewLock = document.getElementById('view-lock');
+
+                const i1 = checkImageRatio_(logoBig, 'Logo (grande)');
+                if (i1) issues.push(i1);
+                const i2 = checkImageRatio_(logoSmall, 'Logo (header)');
+                if (i2) issues.push(i2);
+                const i3 = checkImageRatio_(qrImg, 'QR', 1);
+                if (i3) issues.push(i3);
+
+                const o1 = checkOverflow_(viewActive, 'View attiva');
+                if (o1) issues.push(o1);
+                const o2 = checkOverflow_(viewLock, 'View lock');
+                if (o2) issues.push(o2);
+                const o3 = checkOverflow_(ticketBar, 'Ticket bar');
+                if (o3) issues.push(o3);
+                const o4 = checkOverflow_(ticketMeta, 'Ticket meta');
+                if (o4) issues.push(o4);
+                if (modal && modal.style.display !== 'none') {
+                    const o5 = checkOverflow_(modalCard, 'Modale piani');
+                    if (o5) issues.push(o5);
+                }
+
+                const status = document.getElementById('ui-test-status');
+                const list = document.getElementById('ui-test-list');
+                if (list) list.innerHTML = '';
+                if (!issues.length) {
+                    if (status) { status.className = 'ui-test-pill ok'; status.textContent = 'OK'; }
+                    if (list) {
+                        const li = document.createElement('li');
+                        li.textContent = 'Nessuna distorsione/overflow rilevata nelle componenti principali.';
+                        list.appendChild(li);
+                    }
+                } else {
+                    if (status) { status.className = 'ui-test-pill warn'; status.textContent = 'WARN (' + issues.length + ')'; }
+                    if (list) {
+                        issues.forEach(function(t) {
+                            const li = document.createElement('li');
+                            li.textContent = t;
+                            list.appendChild(li);
+                        });
+                    }
+                }
+            }
+
+            let resizeTimer = null;
+            function schedule_() {
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() { requestAnimationFrame(runOnce_); }, 120);
+            }
+            window.addEventListener('resize', schedule_);
+            window.addEventListener('orientationchange', schedule_);
+            setTimeout(function() { requestAnimationFrame(runOnce_); }, 0);
+            setTimeout(function() { requestAnimationFrame(runOnce_); }, 500);
+        }
+
         window.onload = function() {
             const emailInput = document.getElementById('input-email');
             if (emailInput) {
@@ -1156,6 +1293,9 @@
                 mostraBanner(trad.errWifi, "rosso");
             } else {
                 verificaLicenza(false);
+            }
+            if (String(urlParams.get('ui_test') || '').trim() === '1') {
+                avviaUiStabilityTest_();
             }
         };
     </script>
