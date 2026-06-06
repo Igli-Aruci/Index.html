@@ -165,6 +165,10 @@
         }
 
         body.licenza-attiva.qr-visibile .left-panel { justify-content: flex-start; }
+        body.licenza-attiva.qr-visibile .left-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+
+        body.sos-focus .chat-panel { display: none !important; }
+        body.sos-focus .shell-main { grid-template-columns: 1fr !important; }
 
         .chat-panel { min-height: 0; height: 100%; display: none; }
         body.licenza-attiva .chat-panel { display: block; }
@@ -191,6 +195,10 @@
         #view-active { max-width: 760px; min-height: 420px; display: flex; flex-direction: column; justify-content: center; }
         body.licenza-attiva.qr-visibile #view-active { justify-content: flex-start; }
         #view-active.qr-visibile { max-width: 660px; min-height: 0; }
+        body.sos-focus .left-panel { justify-content: center; }
+        body.sos-focus .container { max-width: 920px; }
+        body.sos-focus #view-active { max-width: 920px; }
+        body.sos-focus #view-active.qr-visibile { max-width: 920px; }
 
         .brand-logo { max-width: 220px; height: auto; margin: 0 auto 14px auto; display: block; }
         h2 { margin: 0 0 8px 0; font-size: clamp(20px, 2vw, 24px); font-weight: 950; letter-spacing: -0.02em; color: var(--text); }
@@ -302,11 +310,16 @@
         #view-loading .spinner { display: block; width: 46px; height: 46px; border-width: 4px; border-top-width: 4px; }
         #view-loading p { margin-top: 18px; font-size: 15px; font-weight: 900; color: rgba(15, 23, 42, 0.70); }
 
-        #qr-result { margin-top: 12px; display: none; padding-top: 12px; border-top: 1px dashed rgba(15, 23, 42, 0.12); text-align: center; }
+        #qr-result { margin-top: 12px; display: none; padding-top: 12px; border-top: 1px dashed rgba(15, 23, 42, 0.12); }
         .testo-scansione { font-size: 12px; color: rgba(15, 23, 42, 0.85); font-weight: 1000; margin-bottom: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
         #qr-image { width: clamp(150px, 24vw, 220px); aspect-ratio: 1 / 1; height: auto; border-radius: 16px; border: 4px solid #10b981; padding: 6px; background: #fff; }
 
         .lock-banner { cursor: default; user-select: none; margin-bottom: 12px; }
+
+        .qr-grid { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+        .qr-info { padding: 12px 12px; border-radius: 16px; background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.10); text-align: left; }
+        .qr-box { display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 520px) { .qr-grid { grid-template-columns: 1fr; } .qr-box { justify-content: flex-start; } }
 
         body.licenza-attiva.qr-visibile #view-active { padding-bottom: 16px; }
         body.licenza-attiva.qr-visibile .ticket-bar { margin: 10px 0 10px; padding: 12px 12px 10px 16px; }
@@ -327,6 +340,7 @@
         #widget-3cx, call-us-selector, iframe[title*="3CX"], div[id^="tcx-"] { display: none !important; visibility: hidden !important; }
         body.licenza-attiva #widget-3cx, body.licenza-attiva call-us-selector, body.licenza-attiva iframe[title*="3CX"], body.licenza-attiva div[id^="tcx-"] { display: block !important; visibility: visible !important; }
         .tcx-callus-button { display: none !important; visibility: hidden !important; }
+        body.licenza-attiva .tcx-callus-button { display: block !important; visibility: visible !important; }
 
         @media (min-width: 768px) and (orientation: landscape) {
             #view-active.qr-visibile { max-width: 640px; }
@@ -398,8 +412,14 @@
                     <div id="loader-sos" class="spinner"></div>
 
                     <div id="qr-result">
-                        <div class="testo-scansione" id="text-act-scan">📱 Scansiona il QR code per partecipare alla videochiamata. In alternativa verifica la tua email per entrare in chiamata con l'operatore.</div>
-                        <img id="qr-image" src="" alt="QR Code">
+                        <div class="qr-grid">
+                            <div class="qr-info">
+                                <div class="testo-scansione" id="text-act-scan">📱 Scansiona il QR code per partecipare alla videochiamata. In alternativa verifica la tua email per entrare in chiamata con l'operatore.</div>
+                            </div>
+                            <div class="qr-box">
+                                <img id="qr-image" src="" alt="QR Code">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -596,6 +616,7 @@
 
         window.addEventListener('offline', function() {
             document.body.classList.remove('licenza-attiva');
+            document.body.classList.remove('sos-focus');
             document.getElementById('view-loading').style.display = 'none';
             document.getElementById('view-active').style.display = 'none';
             document.getElementById('view-lock').style.display = 'block';
@@ -694,6 +715,7 @@
                     if (data.url) {
                         localStorage.setItem('sos_url_' + businessId, data.url);
                         if (data.ticket) localStorage.setItem('sos_ticket_' + businessId, data.ticket);
+                        document.body.classList.add('sos-focus');
                         mostraQrCodeArea(data.url);
                         document.getElementById('btn-sos').disabled = true;
                         document.getElementById('btn-sos').innerText = trad.sosSent;
@@ -877,6 +899,7 @@
                             pollingTicketTimer = null;
                             localStorage.removeItem('sos_ticket_' + businessId);
                             localStorage.removeItem('sos_url_' + businessId);
+                            document.body.classList.remove('sos-focus');
                             document.getElementById('btn-sos').innerText = trad.actSos;
                             document.getElementById('qr-result').style.display = 'none';
                             aggiornaTicketBar('', '', '');
@@ -892,6 +915,7 @@
                             setTimeout(function() {
                                 localStorage.removeItem('sos_ticket_' + businessId);
                                 localStorage.removeItem('sos_url_' + businessId);
+                                document.body.classList.remove('sos-focus');
                                 document.getElementById('btn-sos').innerText = trad.actSos;
                                 document.getElementById('qr-result').style.display = 'none';
                                 aggiornaTicketBar('', '', '');
@@ -917,11 +941,13 @@
             if (url) mostraQrCodeArea(url);
             else setQrVisibile(false);
             if (token) {
+                document.body.classList.add('sos-focus');
                 document.getElementById('btn-sos').disabled = true;
                 document.getElementById('btn-sos').innerText = trad.sosSent;
                 aggiornaTicketBar('OPEN', '', '');
                 avviaPollingTicket(token);
             } else {
+                document.body.classList.remove('sos-focus');
                 aggiornaStatoPulsanteSos_();
             }
         }
