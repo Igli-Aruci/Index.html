@@ -484,10 +484,12 @@
         const urlParams = new URLSearchParams(window.location.search);
         const businessId = (urlParams.get('id') || '12345').trim();
         const locationId = (urlParams.get('loc') || 'sede').trim(); 
+        let businessName = (urlParams.get('businessName') || urlParams.get('business_name') || '').trim();
         let locationName = (urlParams.get('loc_name') || 'NO RIVAL MASTER').trim();
         let userName = (urlParams.get('user') || 'Utente').trim();
 
         userName = userName.replace(/[*#@!$%&.]/g, '').trim();
+        businessName = businessName.replace(/[*#@!$%&.]/g, '').trim();
         locationName = locationName.replace(/[*#@!$%&.]/g, '').trim();
 
         const userFormattato = userName.trim();
@@ -732,7 +734,7 @@
             if (paygConfirm) {
                 paygConfirm.addEventListener('click', function() {
                     eseguiChiamataGoogle(
-                        { id: businessId, loc: locationId, action: 'start_payg' },
+                        { id: businessId, loc: locationId, loc_name: locationName, business_name: businessName, action: 'start_payg' },
                         function(res) {
                             const token = res && res.paygToken ? String(res.paygToken) : '';
                             if (!token) return;
