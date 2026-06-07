@@ -11,9 +11,21 @@
             if (injectedUrl && injectedUrl.indexOf("<?") === -1) {
                 window.GOOGLE_SCRIPT_URL = injectedUrl;
             }
+            const injectedOverride = "<?!= webAppUrlOverride ?>";
+            if (injectedOverride && injectedOverride.indexOf("<?") === -1) {
+                window.GOOGLE_SCRIPT_URL_OVERRIDE = injectedOverride;
+            }
             const injectedKey = "<?!= apiKey ?>";
             if (injectedKey && injectedKey.indexOf("<?") === -1) {
                 window.GOOGLE_API_KEY = injectedKey;
+            }
+            const injectedStripeLinks = '<?!= stripeLinksJson ?>';
+            if (injectedStripeLinks && injectedStripeLinks.indexOf("<?") === -1) {
+                try { window.STRIPE_LINKS = JSON.parse(injectedStripeLinks); } catch (e) {}
+            }
+            const injectedPlanLabels = '<?!= planLabelsJson ?>';
+            if (injectedPlanLabels && injectedPlanLabels.indexOf("<?") === -1) {
+                try { window.PLAN_LABELS = JSON.parse(injectedPlanLabels); } catch (e) {}
             }
         })();
     </script>
@@ -543,7 +555,7 @@
         containerWidget.appendChild(selector3cx);
         // ========================================================
 
-        const googleScriptUrl = window.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        const googleScriptUrl = window.GOOGLE_SCRIPT_URL_OVERRIDE || window.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const forcedLang = String(urlParams.get('lang') || '').trim().toLowerCase();
         const userLang = (navigator.language || navigator.userLanguage || 'it');
         const linguaModello = (forcedLang === 'it' || forcedLang === 'en') ? forcedLang : (!userLang.startsWith('it') ? 'en' : 'it');
@@ -668,12 +680,13 @@
             lockNote.innerText = '';
         }
 
-        const stripeLinks = {
+        const stripeLinks = window.STRIPE_LINKS || {
             H10: "https://buy.stripe.com/tuo_link_10_ore_100",
             H20: "https://buy.stripe.com/tuo_link_20_ore_200",
             H30: "https://buy.stripe.com/tuo_link_30_ore_300",
             PREMIUM: "https://buy.stripe.com/tuo_link_premium_350"
         };
+        const planLabels = window.PLAN_LABELS || {};
 
         function setServicePill_(serviceType, hoursRemaining, rate) {
             const pill = document.getElementById('header-service');
@@ -750,12 +763,19 @@
                         try { window.location.assign(url); } catch (e) {}
                     }
                 });
+                const planKey = btn.getAttribute('data-plan') || '';
+                if (planKey && planLabels[planKey]) {
+                    btn.innerText = String(planLabels[planKey]);
+                }
             });
 
             if (paygBtn) {
                 paygBtn.addEventListener('click', function() {
                     if (paygBox) paygBox.style.display = (paygBox.style.display === 'none' || !paygBox.style.display) ? 'block' : 'none';
                 });
+                if (planLabels.PAYG) {
+                    paygBtn.innerText = String(planLabels.PAYG);
+                }
             }
 
             if (paygConfirm) {
