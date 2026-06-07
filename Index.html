@@ -676,6 +676,8 @@
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
         let contoRovesciaTimer = null;
+        let paygAutoLockTimer = null;
+        let paygNoSosAutoLockMs = 60000;
 
         function mostraBanner(testo, tipo) {
             const lockNote = document.getElementById('lock-note');
@@ -757,6 +759,62 @@
             }
         }
 
+        function annullaPaygAutoLock_() {
+            try { if (paygAutoLockTimer) { clearTimeout(paygAutoLockTimer); paygAutoLockTimer = null; } } catch (e1) {}
+            try { localStorage.removeItem('payg_pending_sos_at_' + businessId); } catch (e2) {}
+        }
+
+        function paygAutoLockNow_() {
+            try {
+                if (localStorage.getItem('sos_ticket_' + businessId)) { annullaPaygAutoLock_(); return; }
+                const st = String(localStorage.getItem('service_type_' + businessId) || '').toUpperCase();
+                if (st !== 'PAYG') { annullaPaygAutoLock_(); return; }
+            } catch (e0) {}
+
+            try { localStorage.removeItem('payg_token_' + businessId); } catch (e1) {}
+            try { localStorage.removeItem('service_type_' + businessId); } catch (e2) {}
+            try { localStorage.removeItem('service_rate_' + businessId); } catch (e3) {}
+            try { localStorage.removeItem('hours_remaining_' + businessId); } catch (e4) {}
+            annullaPaygAutoLock_();
+
+            try {
+                document.body.classList.remove('licenza-attiva');
+                document.body.classList.remove('sos-focus');
+                document.getElementById('view-active').style.display = 'none';
+                document.getElementById('view-loading').style.display = 'none';
+                document.getElementById('view-lock').style.display = 'block';
+                setQrVisibile(false);
+                nascondiBanner();
+                setServicePill_('', 0, 0);
+                apriPiani_(true);
+                attivaLoopControllo();
+            } catch (e5) {}
+        }
+
+        function avviaPaygAutoLock_() {
+            if (!(isFinite(paygNoSosAutoLockMs) && Number(paygNoSosAutoLockMs) > 0)) { annullaPaygAutoLock_(); return; }
+            try {
+                if (localStorage.getItem('sos_ticket_' + businessId)) { annullaPaygAutoLock_(); return; }
+                const st = String(localStorage.getItem('service_type_' + businessId) || '').toUpperCase();
+                if (st !== 'PAYG') { annullaPaygAutoLock_(); return; }
+            } catch (e0) {}
+
+            let at = 0;
+            try { at = Number(localStorage.getItem('payg_pending_sos_at_' + businessId) || '0'); } catch (e1) { at = 0; }
+            if (!at) {
+                at = Date.now();
+                try { localStorage.setItem('payg_pending_sos_at_' + businessId, String(at)); } catch (e2) {}
+            }
+
+            const remaining = Number(paygNoSosAutoLockMs) - (Date.now() - at);
+            if (remaining <= 0) {
+                paygAutoLockNow_();
+                return;
+            }
+            try { if (paygAutoLockTimer) clearTimeout(paygAutoLockTimer); } catch (e3) {}
+            paygAutoLockTimer = setTimeout(paygAutoLockNow_, remaining);
+        }
+
         function mostraLoadingFull_() {
             try { nascondiBanner(); } catch (e) {}
             const vLoading = document.getElementById('view-loading');
@@ -790,6 +848,10 @@
                 localStorage.setItem('hours_remaining_' + businessId, String(hrsToStore));
                 localStorage.setItem('service_rate_' + businessId, String(rate || '0'));
             } catch (e8) {}
+            try {
+                if (String(serviceType || '').toUpperCase() === 'PAYG') avviaPaygAutoLock_();
+                else annullaPaygAutoLock_();
+            } catch (e9) {}
         }
 
         (function() {
@@ -839,6 +901,7 @@
                                 return;
                             }
                             localStorage.setItem('payg_token_' + businessId, token);
+                            try { localStorage.setItem('payg_pending_sos_at_' + businessId, String(Date.now())); } catch (e2b) {}
                             try { localStorage.removeItem('payg_unlocking_' + businessId); } catch (e3) {}
                             mostraAttivo_('PAYG', 0, res && res.rate ? res.rate : 40);
                             setTimeout(function() { verificaLicenza(false); }, 350);
@@ -943,6 +1006,7 @@
                         const links = cfg && cfg.stripeLinks ? cfg.stripeLinks : null;
                         const labels = cfg && cfg.planLabels ? cfg.planLabels : null;
                         const ui = cfg && cfg.uiTexts ? cfg.uiTexts : null;
+                        const autoLockSec = cfg && cfg.paygNoSosAutoLockSec !== undefined && cfg.paygNoSosAutoLockSec !== null ? Number(cfg.paygNoSosAutoLockSec) : NaN;
                         if (links && typeof links === 'object') {
                             stripeLinks = links;
                         }
@@ -952,6 +1016,13 @@
                         if (ui && typeof ui === 'object') {
                             uiTextsOverride = ui;
                             applicaTraduzioni_();
+                        }
+                        if (isFinite(autoLockSec)) {
+                            paygNoSosAutoLockMs = Math.max(0, Math.floor(autoLockSec * 1000));
+                            const st = String(localStorage.getItem('service_type_' + businessId) || '').toUpperCase();
+                            if (st === 'PAYG' && !localStorage.getItem('sos_ticket_' + businessId)) {
+                                avviaPaygAutoLock_();
+                            }
                         }
                         applicaPianiNelDom_();
                     } catch (e) {}
@@ -994,6 +1065,10 @@
                         const hrsToStore = (String(data.serviceType || '').toUpperCase() === 'HOURS') ? (data.hoursRemaining || '0') : '0';
                         localStorage.setItem('hours_remaining_' + businessId, String(hrsToStore));
                         localStorage.setItem('service_rate_' + businessId, String(data.rate || '0'));
+                        try {
+                            if (String(data.serviceType || '').toUpperCase() === 'PAYG') avviaPaygAutoLock_();
+                            else annullaPaygAutoLock_();
+                        } catch (e8) {}
 
                         if (data.status.startsWith('AVVISO_SCADENZA')) {
                             mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
@@ -1026,6 +1101,7 @@
                         setQrVisibile(false);
                         nascondiBanner();
                         setServicePill_('', 0, 0);
+                        annullaPaygAutoLock_();
                         attivaLoopControllo();
                     }
                 },
@@ -1044,6 +1120,7 @@
                         setTimeout(function() { verificaLicenza(false); }, 1200);
                         return;
                     }
+                    annullaPaygAutoLock_();
                     attivaLoopControllo();
                 }
             );
@@ -1056,6 +1133,7 @@
                 aggiornaStatoPulsanteSos_();
                 return;
             }
+            annullaPaygAutoLock_();
             document.getElementById('btn-sos').disabled = true;
             document.getElementById('loader-sos').style.display = 'block';
             
@@ -1252,6 +1330,7 @@
                             localStorage.removeItem('sos_ticket_' + businessId);
                             localStorage.removeItem('sos_url_' + businessId);
                             localStorage.removeItem('payg_token_' + businessId);
+                            annullaPaygAutoLock_();
                             document.body.classList.remove('sos-focus');
                             document.getElementById('btn-sos').innerText = trad.actSos;
                             document.getElementById('qr-result').style.display = 'none';
@@ -1270,6 +1349,7 @@
                                 localStorage.removeItem('sos_ticket_' + businessId);
                                 localStorage.removeItem('sos_url_' + businessId);
                                 localStorage.removeItem('payg_token_' + businessId);
+                                annullaPaygAutoLock_();
                                 document.body.classList.remove('sos-focus');
                                 document.getElementById('btn-sos').innerText = trad.actSos;
                                 document.getElementById('qr-result').style.display = 'none';
