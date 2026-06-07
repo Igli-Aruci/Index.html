@@ -638,30 +638,40 @@
             }
         };
 
-        const trad = dizionario[linguaModello];
+        let uiTextsOverride = null;
+        let trad = dizionario[linguaModello];
 
-        document.getElementById('text-loading').innerText = trad.loading;
-        document.getElementById('text-lock-title').innerText = trad.lockTitle;
-        document.getElementById('text-lock-desc').innerText = trad.lockDesc;
-        document.getElementById('text-lock-link').innerText = trad.lockLink;
-        document.getElementById('plans-title').innerText = trad.plansTitle;
-        document.getElementById('plans-sub').innerText = trad.plansSub;
-        document.getElementById('plan-payg').innerText = trad.paygBtn;
-        document.getElementById('payg-text').innerText = trad.paygText;
-        document.getElementById('payg-confirm').innerText = trad.paygConfirm;
-        document.getElementById('plans-close').innerText = trad.plansClose;
-        document.getElementById('text-act-title').innerText = trad.actTitle;
-        document.getElementById('text-act-welcome').innerText = trad.actWelcome;
-        document.getElementById('text-act-desc').innerText = trad.actDesc;
-        document.getElementById('text-act-email-label').innerText = trad.actEmailLabel;
-        document.getElementById('input-email').placeholder = trad.actEmailPlaceholder;
-        document.getElementById('ticket-label').innerText = trad.ticketLabel;
-        document.getElementById('ticket-queue-label').innerText = trad.ticketQueueLabel;
-        document.getElementById('ticket-eta-label').innerText = trad.ticketEtaLabel;
-        document.getElementById('ticket-elapsed-label').innerText = trad.ticketElapsedLabel;
-        document.getElementById('btn-sos').innerText = trad.actSos;
-        document.getElementById('text-act-scan').innerText = trad.actScan;
-        document.getElementById('display-user').innerText = userFormattato;
+        function applicaTraduzioni_() {
+            const base = dizionario[linguaModello] || {};
+            const all = (uiTextsOverride && typeof uiTextsOverride === 'object') ? uiTextsOverride : {};
+            const ov = (all && all[linguaModello] && typeof all[linguaModello] === 'object') ? all[linguaModello] : {};
+            trad = Object.assign({}, base, ov);
+
+            document.getElementById('text-loading').innerText = trad.loading;
+            document.getElementById('text-lock-title').innerText = trad.lockTitle;
+            document.getElementById('text-lock-desc').innerText = trad.lockDesc;
+            document.getElementById('text-lock-link').innerText = trad.lockLink;
+            document.getElementById('plans-title').innerText = trad.plansTitle;
+            document.getElementById('plans-sub').innerText = trad.plansSub;
+            document.getElementById('plan-payg').innerText = trad.paygBtn;
+            document.getElementById('payg-text').innerText = trad.paygText;
+            document.getElementById('payg-confirm').innerText = trad.paygConfirm;
+            document.getElementById('plans-close').innerText = trad.plansClose;
+            document.getElementById('text-act-title').innerText = trad.actTitle;
+            document.getElementById('text-act-welcome').innerText = trad.actWelcome;
+            document.getElementById('text-act-desc').innerText = trad.actDesc;
+            document.getElementById('text-act-email-label').innerText = trad.actEmailLabel;
+            document.getElementById('input-email').placeholder = trad.actEmailPlaceholder;
+            document.getElementById('ticket-label').innerText = trad.ticketLabel;
+            document.getElementById('ticket-queue-label').innerText = trad.ticketQueueLabel;
+            document.getElementById('ticket-eta-label').innerText = trad.ticketEtaLabel;
+            document.getElementById('ticket-elapsed-label').innerText = trad.ticketElapsedLabel;
+            document.getElementById('btn-sos').innerText = trad.actSos;
+            document.getElementById('text-act-scan').innerText = trad.actScan;
+            document.getElementById('display-user').innerText = userFormattato;
+        }
+
+        applicaTraduzioni_();
 
         let controlloAutomaticoTimer = null;
         let staVerificando = false;
@@ -932,11 +942,16 @@
                         const cfg = res && res.config ? res.config : null;
                         const links = cfg && cfg.stripeLinks ? cfg.stripeLinks : null;
                         const labels = cfg && cfg.planLabels ? cfg.planLabels : null;
+                        const ui = cfg && cfg.uiTexts ? cfg.uiTexts : null;
                         if (links && typeof links === 'object') {
                             stripeLinks = links;
                         }
                         if (labels && typeof labels === 'object') {
                             planLabels = labels;
+                        }
+                        if (ui && typeof ui === 'object') {
+                            uiTextsOverride = ui;
+                            applicaTraduzioni_();
                         }
                         applicaPianiNelDom_();
                     } catch (e) {}
