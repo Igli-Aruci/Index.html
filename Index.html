@@ -7,24 +7,25 @@
 
     <script>
         (function() {
+            const templateMarker = "<" + "?";
             const injectedUrl = "<?!= googleScriptUrl ?>";
-            if (injectedUrl && injectedUrl.indexOf("<?") === -1) {
+            if (injectedUrl && injectedUrl.indexOf(templateMarker) === -1) {
                 window.GOOGLE_SCRIPT_URL = injectedUrl;
             }
             const injectedOverride = "<?!= webAppUrlOverride ?>";
-            if (injectedOverride && injectedOverride.indexOf("<?") === -1) {
+            if (injectedOverride && injectedOverride.indexOf(templateMarker) === -1) {
                 window.GOOGLE_SCRIPT_URL_OVERRIDE = injectedOverride;
             }
             const injectedKey = "<?!= apiKey ?>";
-            if (injectedKey && injectedKey.indexOf("<?") === -1) {
+            if (injectedKey && injectedKey.indexOf(templateMarker) === -1) {
                 window.GOOGLE_API_KEY = injectedKey;
             }
             const injectedStripeLinks = '<?!= stripeLinksJson ?>';
-            if (injectedStripeLinks && injectedStripeLinks.indexOf("<?") === -1) {
+            if (injectedStripeLinks && injectedStripeLinks.indexOf(templateMarker) === -1) {
                 try { window.STRIPE_LINKS = JSON.parse(injectedStripeLinks); } catch (e) {}
             }
             const injectedPlanLabels = '<?!= planLabelsJson ?>';
-            if (injectedPlanLabels && injectedPlanLabels.indexOf("<?") === -1) {
+            if (injectedPlanLabels && injectedPlanLabels.indexOf(templateMarker) === -1) {
                 try { window.PLAN_LABELS = JSON.parse(injectedPlanLabels); } catch (e) {}
             }
         })();
@@ -555,7 +556,7 @@
         containerWidget.appendChild(selector3cx);
         // ========================================================
 
-        const googleScriptUrl = window.GOOGLE_SCRIPT_URL_OVERRIDE || window.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
+        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbx43TEA06gLbc1Slue4siu_4_xmsvsAEYlZ69oTYnmad0zNlVKJj837Lm_lTMr-RxvXiw/exec";
         const forcedLang = String(urlParams.get('lang') || '').trim().toLowerCase();
         const userLang = (navigator.language || navigator.userLanguage || 'it');
         const linguaModello = (forcedLang === 'it' || forcedLang === 'en') ? forcedLang : (!userLang.startsWith('it') ? 'en' : 'it');
@@ -680,13 +681,27 @@
             lockNote.innerText = '';
         }
 
-        const stripeLinks = window.STRIPE_LINKS || {
+        let stripeLinks = window.STRIPE_LINKS || {
             H10: "https://buy.stripe.com/tuo_link_10_ore_100",
             H20: "https://buy.stripe.com/tuo_link_20_ore_200",
             H30: "https://buy.stripe.com/tuo_link_30_ore_300",
             PREMIUM: "https://buy.stripe.com/tuo_link_premium_350"
         };
-        const planLabels = window.PLAN_LABELS || {};
+        let planLabels = window.PLAN_LABELS || {};
+
+        function applicaPianiNelDom_() {
+            const planButtons = document.querySelectorAll('[data-plan]');
+            planButtons.forEach(function(btn) {
+                const planKey = btn.getAttribute('data-plan') || '';
+                if (planKey && planLabels && planLabels[planKey]) {
+                    btn.innerText = String(planLabels[planKey]);
+                }
+            });
+            const paygBtn = document.getElementById('plan-payg');
+            if (paygBtn && planLabels && planLabels.PAYG) {
+                paygBtn.innerText = String(planLabels.PAYG);
+            }
+        }
 
         function setServicePill_(serviceType, hoursRemaining, rate) {
             const pill = document.getElementById('header-service');
@@ -763,19 +778,12 @@
                         try { window.location.assign(url); } catch (e) {}
                     }
                 });
-                const planKey = btn.getAttribute('data-plan') || '';
-                if (planKey && planLabels[planKey]) {
-                    btn.innerText = String(planLabels[planKey]);
-                }
             });
 
             if (paygBtn) {
                 paygBtn.addEventListener('click', function() {
                     if (paygBox) paygBox.style.display = (paygBox.style.display === 'none' || !paygBox.style.display) ? 'block' : 'none';
                 });
-                if (planLabels.PAYG) {
-                    paygBtn.innerText = String(planLabels.PAYG);
-                }
             }
 
             if (paygConfirm) {
@@ -807,6 +815,8 @@
                     );
                 });
             }
+
+            applicaPianiNelDom_();
         })();
 
         function emailValidaPerSos_() {
@@ -851,20 +861,60 @@
         function eseguiChiamataGoogle(parametri, callbackSuccesso, callbackErrore) {
             if (!navigator.onLine) { callbackErrore("Offline"); return; }
             const callbackName = 'handler_' + Math.round(100000 * Math.random());
-            const timeoutTimer = setTimeout(() => {
-                delete window[callbackName];
-                if (document.getElementById(callbackName)) document.getElementById(callbackName).remove();
-                callbackErrore("Timeout");
+            const timeoutTimer = setTimeout(function() {
+                try { delete window[callbackName]; } catch (e1) {}
+                try {
+                    const el = document.getElementById(callbackName);
+                    if (el) el.remove();
+                } catch (e2) {}
+                try { callbackErrore("Timeout"); } catch (e3) {}
             }, 15000);
-            window[callbackName] = function(data) { clearTimeout(timeoutTimer); callbackSuccesso(data); delete window[callbackName]; if (document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            window[callbackName] = function(data) {
+                try { clearTimeout(timeoutTimer); } catch (e1) {}
+                try { callbackSuccesso(data); } catch (e2) {}
+                try { delete window[callbackName]; } catch (e3) {}
+                try {
+                    const el = document.getElementById(callbackName);
+                    if (el) el.remove();
+                } catch (e4) {}
+            };
             const queryParams = new URLSearchParams(parametri);
             if (window.GOOGLE_API_KEY) queryParams.append('key', window.GOOGLE_API_KEY);
             queryParams.append('callback', callbackName);
             const script = document.createElement('script');
             script.id = callbackName;
-            script.src = `${googleScriptUrl}?${queryParams.toString()}`;
-            script.onerror = function() { clearTimeout(timeoutTimer); callbackErrore("Error"); delete window[callbackName]; if(document.getElementById(callbackName)) document.getElementById(callbackName).remove(); };
+            script.src = String(googleScriptUrl || '') + "?" + queryParams.toString();
+            script.onerror = function() {
+                try { clearTimeout(timeoutTimer); } catch (e1) {}
+                try { callbackErrore("Error"); } catch (e2) {}
+                try { delete window[callbackName]; } catch (e3) {}
+                try {
+                    const el = document.getElementById(callbackName);
+                    if (el) el.remove();
+                } catch (e4) {}
+            };
             document.body.appendChild(script);
+        }
+
+        function caricaConfigPubblica_() {
+            eseguiChiamataGoogle(
+                { action: 'public_config' },
+                function(res) {
+                    try {
+                        const cfg = res && res.config ? res.config : null;
+                        const links = cfg && cfg.stripeLinks ? cfg.stripeLinks : null;
+                        const labels = cfg && cfg.planLabels ? cfg.planLabels : null;
+                        if (links && typeof links === 'object') {
+                            stripeLinks = links;
+                        }
+                        if (labels && typeof labels === 'object') {
+                            planLabels = labels;
+                        }
+                        applicaPianiNelDom_();
+                    } catch (e) {}
+                },
+                function() {}
+            );
         }
 
         function verificaLicenza(mostraLoaderPulsante = false) {
@@ -1325,6 +1375,7 @@
         }
 
         window.onload = function() {
+            try { caricaConfigPubblica_(); } catch (e) {}
             const emailInput = document.getElementById('input-email');
             if (emailInput) {
                 emailInput.addEventListener('input', aggiornaStatoPulsanteSos_);
