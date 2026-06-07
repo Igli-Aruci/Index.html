@@ -719,6 +719,16 @@
             }
         }
 
+        function mostraLoadingFull_() {
+            try { nascondiBanner(); } catch (e) {}
+            const vLoading = document.getElementById('view-loading');
+            const vLock = document.getElementById('view-lock');
+            const vActive = document.getElementById('view-active');
+            if (vActive) vActive.style.display = 'none';
+            if (vLock) vLock.style.display = 'none';
+            if (vLoading) vLoading.style.display = 'flex';
+        }
+
         (function() {
             const openBtn = document.getElementById('text-lock-link');
             const closeBtn = document.getElementById('plans-close');
@@ -750,16 +760,30 @@
 
             if (paygConfirm) {
                 paygConfirm.addEventListener('click', function() {
+                    paygConfirm.disabled = true;
+                    mostraLoadingFull_();
                     eseguiChiamataGoogle(
                         { id: businessId, loc: locationId, loc_name: locationName, business_name: businessName, action: 'start_payg' },
                         function(res) {
                             const token = res && res.paygToken ? String(res.paygToken) : '';
-                            if (!token) return;
+                            if (!token) {
+                                paygConfirm.disabled = false;
+                                document.getElementById('view-loading').style.display = 'none';
+                                document.getElementById('view-lock').style.display = 'block';
+                                mostraBanner(trad.errConn, "rosso");
+                                return;
+                            }
                             localStorage.setItem('payg_token_' + businessId, token);
                             apriPiani_(false);
                             verificaLicenza(false);
+                            setTimeout(function() { paygConfirm.disabled = false; }, 800);
                         },
-                        function() {}
+                        function() {
+                            paygConfirm.disabled = false;
+                            document.getElementById('view-loading').style.display = 'none';
+                            document.getElementById('view-lock').style.display = 'block';
+                            mostraBanner(trad.errConn, "rosso");
+                        }
                     );
                 });
             }
@@ -909,7 +933,7 @@
             const emailCliente = String(document.getElementById('input-email').value || '').trim();
             const paygToken = localStorage.getItem('payg_token_' + businessId) || '';
             eseguiChiamataGoogle(
-                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, lang: linguaModello, email: emailCliente, paygToken: paygToken },
+                { id: businessId, loc: locationId, action: 'sos', loc_name: locationName, business_name: businessName, lang: linguaModello, email: emailCliente, paygToken: paygToken },
                 function(data) {
                     document.getElementById('loader-sos').style.display = 'none';
                     if (data.url) {
