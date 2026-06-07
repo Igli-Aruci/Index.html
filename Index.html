@@ -757,6 +757,31 @@
             if (vLoading) vLoading.style.display = 'flex';
         }
 
+        function mostraAttivo_(serviceType, hoursRemaining, rate) {
+            try { clearInterval(controlloAutomaticoTimer); controlloAutomaticoTimer = null; } catch (e1) {}
+            try {
+                document.body.classList.add('licenza-attiva');
+                document.getElementById('view-loading').style.display = 'none';
+                document.getElementById('view-lock').style.display = 'none';
+                document.getElementById('view-active').style.display = 'block';
+            } catch (e2) {}
+            try {
+                document.getElementById('btn-sos').innerText = trad.actSos;
+                document.getElementById('qr-result').style.display = 'none';
+                setQrVisibile(false);
+            } catch (e3) {}
+            try { if (contoRovesciaTimer) { clearInterval(contoRovesciaTimer); contoRovesciaTimer = null; } } catch (e4) {}
+            try { ripristinaTicketSePresente(); } catch (e5) {}
+            try { aggiornaStatoPulsanteSos_(); } catch (e6) {}
+            try { setServicePill_(serviceType, hoursRemaining, rate); } catch (e7) {}
+            try {
+                localStorage.setItem('service_type_' + businessId, String(serviceType || ''));
+                const hrsToStore = (String(serviceType || '').toUpperCase() === 'HOURS') ? (hoursRemaining || '0') : '0';
+                localStorage.setItem('hours_remaining_' + businessId, String(hrsToStore));
+                localStorage.setItem('service_rate_' + businessId, String(rate || '0'));
+            } catch (e8) {}
+        }
+
         (function() {
             const openBtn = document.getElementById('text-lock-link');
             const closeBtn = document.getElementById('plans-close');
@@ -789,6 +814,8 @@
             if (paygConfirm) {
                 paygConfirm.addEventListener('click', function() {
                     paygConfirm.disabled = true;
+                    try { apriPiani_(false); } catch (e1) {}
+                    try { localStorage.setItem('payg_unlocking_' + businessId, String(Date.now())); } catch (e2) {}
                     mostraLoadingFull_();
                     eseguiChiamataGoogle(
                         { id: businessId, loc: locationId, loc_name: locationName, business_name: businessName, action: 'start_payg' },
@@ -802,8 +829,9 @@
                                 return;
                             }
                             localStorage.setItem('payg_token_' + businessId, token);
-                            apriPiani_(false);
-                            verificaLicenza(false);
+                            try { localStorage.removeItem('payg_unlocking_' + businessId); } catch (e3) {}
+                            mostraAttivo_('PAYG', 0, res && res.rate ? res.rate : 40);
+                            setTimeout(function() { verificaLicenza(false); }, 350);
                             setTimeout(function() { paygConfirm.disabled = false; }, 800);
                         },
                         function() {
@@ -956,6 +984,14 @@
                             mostraBanner(trad.licWarning.replace("{giorni}", data.giorni), "arancione");
                         } else { nascondiBanner(); }
                     } else {
+                        const unlockingAt = Number(localStorage.getItem('payg_unlocking_' + businessId) || '0');
+                        if (unlockingAt && (Date.now() - unlockingAt) < 20000 && (localStorage.getItem('payg_token_' + businessId) || '')) {
+                            document.getElementById('view-active').style.display = 'none';
+                            document.getElementById('view-lock').style.display = 'none';
+                            document.getElementById('view-loading').style.display = 'flex';
+                            setTimeout(function() { verificaLicenza(false); }, 900);
+                            return;
+                        }
                         document.body.classList.remove('licenza-attiva');
                         const activeToken = localStorage.getItem('sos_ticket_' + businessId);
                         if (activeToken) {
@@ -984,6 +1020,14 @@
                     if (mostraLoaderPulsante) {
                         const loader = document.getElementById('loader-lock');
                         if (loader) loader.style.display = 'none';
+                    }
+                    const unlockingAt = Number(localStorage.getItem('payg_unlocking_' + businessId) || '0');
+                    if (unlockingAt && (Date.now() - unlockingAt) < 20000 && (localStorage.getItem('payg_token_' + businessId) || '')) {
+                        document.getElementById('view-active').style.display = 'none';
+                        document.getElementById('view-lock').style.display = 'none';
+                        document.getElementById('view-loading').style.display = 'flex';
+                        setTimeout(function() { verificaLicenza(false); }, 1200);
+                        return;
                     }
                     attivaLoopControllo();
                 }
